@@ -1,0 +1,16 @@
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+repositories {
+	jcenter()
+}
+
+dependencies {
+	compile 'org.swinglabs:swingx:1.6.1'
+}
+
+sourceSets.main.java.srcDirs = ['src']
+
+sourceCompatibility = 1.8
