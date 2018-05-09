@@ -32,6 +32,19 @@ public class MobList {
 	public static final String GUARDIAN = "Guardian";
 	public static final String OCELOT = "Ocelot";
 
+	public static final String DONKEY = "Donkey";
+	public static final String PIG = "Pig";
+	public static final String SHEEP = "Sheep";
+	public static final String COW = "Cow";
+	public static final String CHICKEN = "Chicken";
+	public static final String WOLF = "Wolf";
+	public static final String MOOSHROOM = "Mooshroom";
+	public static final String HORSE = "Horse";
+	public static final String RABBIT = "Rabbit";
+	public static final String POLAR_BEAR = "PolarBear";
+	public static final String LLAMA = "Llama";
+	public static final String PARROT = "Parrot";
+
 	private static final Set<String> VALID_MOBS = new HashSet<>();
 	private static final String[] VALID_MOBS_ARRAY;
 
@@ -96,40 +109,58 @@ public class MobList {
 	public static enum BiomeType {
 		// @formatter:off
 		NORMAL,
+		BEACH,
 		DESERT,
 		END,
+		FLOWER_FOREST,
+		FOREST,
 		NETHER,
+		EXTREME_HILLS,
 		JUNGLE,
+		MESA,
+		MUSHROOM_ISLAND,
+		OCEAN,
+		PLAINS,
+		RIVER,
+		SAVANNA,
+		SAVANNA_PLATEAU,
 		SNOW,
 		SWAMP,
+		TAIGA,
 		WITCH_HUT,
 		MONUMENT,
 		FORTRESS;
 		// @formatter:on
 
-		private List<SpawnEntry> spawnEntries = new ArrayList<>();
+		private List<SpawnEntry> hostileSpawnEntries = new ArrayList<>();
+		private List<SpawnEntry> passiveSpawnEntries = new ArrayList<>();
 
 		private BiomeType() {
-			addSpawnEntry(SPIDER, 100, 4, 4);
-			addSpawnEntry(ZOMBIE, 95, 4, 4);
-			addSpawnEntry(ZOMBIE_VILLAGER, 5, 1, 1);
-			addSpawnEntry(SKELETON, 100, 4, 4);
-			addSpawnEntry(CREEPER, 100, 4, 4);
-			addSpawnEntry(SLIME, 100, 4, 4);
-			addSpawnEntry(ENDERMAN, 10, 1, 4);
-			addSpawnEntry(WITCH, 5, 1, 4);
-		}
-		
-		public List<SpawnEntry> getSpawnEntries() {
-			return spawnEntries;
+			addHostileSpawnEntry(SPIDER, 100, 4, 4);
+			addHostileSpawnEntry(ZOMBIE, 95, 4, 4);
+			addHostileSpawnEntry(ZOMBIE_VILLAGER, 5, 1, 1);
+			addHostileSpawnEntry(SKELETON, 100, 4, 4);
+			addHostileSpawnEntry(CREEPER, 100, 4, 4);
+			addHostileSpawnEntry(SLIME, 100, 4, 4);
+			addHostileSpawnEntry(ENDERMAN, 10, 1, 4);
+			addHostileSpawnEntry(WITCH, 5, 1, 4);
+
+			addPassiveSpawnEntry(SHEEP, 12, 4, 4);
+			addPassiveSpawnEntry(PIG, 10, 4, 4);
+			addPassiveSpawnEntry(CHICKEN, 10, 4, 4);
+			addPassiveSpawnEntry(COW, 8, 4, 4);
 		}
 
-		private void addSpawnEntry(String mobType, int weight, int groupMin, int groupMax) {
-			spawnEntries.add(new SpawnEntry(mobType, weight, groupMin, groupMax));
+		public List<SpawnEntry> getHostileSpawnEntries() {
+			return hostileSpawnEntries;
 		}
 
-		private void removeSpawnEntry(String mobType) {
-			Iterator<SpawnEntry> itr = spawnEntries.iterator();
+		private void addHostileSpawnEntry(String mobType, int weight, int groupMin, int groupMax) {
+			hostileSpawnEntries.add(new SpawnEntry(mobType, weight, groupMin, groupMax));
+		}
+
+		private void removeHostileSpawnEntry(String mobType) {
+			Iterator<SpawnEntry> itr = hostileSpawnEntries.iterator();
 			while (itr.hasNext()) {
 				if (itr.next().mobType.equals(mobType)) {
 					itr.remove();
@@ -137,42 +168,90 @@ public class MobList {
 			}
 		}
 
-		static {
-			DESERT.removeSpawnEntry(ZOMBIE);
-			DESERT.removeSpawnEntry(ZOMBIE_VILLAGER);
-			DESERT.addSpawnEntry(ZOMBIE, 19, 4, 4);
-			DESERT.addSpawnEntry(ZOMBIE_VILLAGER, 1, 4, 4);
-			DESERT.addSpawnEntry(HUSK, 80, 4, 4);
+		public List<SpawnEntry> getPassiveSpawnEntries() {
+			return passiveSpawnEntries;
+		}
 
-			END.spawnEntries.clear();
-			END.addSpawnEntry(ENDERMAN, 10, 4, 4);
-			
-			NETHER.spawnEntries.clear();
-			NETHER.addSpawnEntry(GHAST, 50, 4, 4);
-			NETHER.addSpawnEntry(ZOMBIE_PIGMAN, 100, 4, 4);
-			NETHER.addSpawnEntry(MAGMA_CUBE, 2, 4, 4);
-			NETHER.addSpawnEntry(ENDERMAN, 1, 4, 4);
-			
-			JUNGLE.addSpawnEntry(OCELOT, 2, 1, 1);
-			
-			SNOW.removeSpawnEntry(SKELETON);
-			SNOW.addSpawnEntry(SKELETON, 20, 4, 4);
-			SNOW.addSpawnEntry(STRAY, 80, 4, 4);
-			
-			SWAMP.addSpawnEntry(SLIME, 1, 1, 1);
-			
-			WITCH_HUT.spawnEntries.clear();
-			WITCH_HUT.addSpawnEntry(WITCH, 1, 1, 1);
-			
-			MONUMENT.spawnEntries.clear();
-			MONUMENT.addSpawnEntry(GUARDIAN, 1, 2, 4);
-			
-			FORTRESS.spawnEntries.clear();
-			FORTRESS.addSpawnEntry(BLAZE, 10, 2, 3);
-			FORTRESS.addSpawnEntry(ZOMBIE_PIGMAN, 5, 4, 4);
-			FORTRESS.addSpawnEntry(WITHER_SKELETON, 8, 5, 5);
-			FORTRESS.addSpawnEntry(SKELETON, 2, 5, 5);
-			FORTRESS.addSpawnEntry(MAGMA_CUBE, 3, 4, 4);
+		private void addPassiveSpawnEntry(String mobType, int weight, int groupMin, int groupMax) {
+			passiveSpawnEntries.add(new SpawnEntry(mobType, weight, groupMin, groupMax));
+		}
+
+		static {
+			BEACH.passiveSpawnEntries.clear();
+
+			DESERT.removeHostileSpawnEntry(ZOMBIE);
+			DESERT.removeHostileSpawnEntry(ZOMBIE_VILLAGER);
+			DESERT.addHostileSpawnEntry(ZOMBIE, 19, 4, 4);
+			DESERT.addHostileSpawnEntry(ZOMBIE_VILLAGER, 1, 4, 4);
+			DESERT.addHostileSpawnEntry(HUSK, 80, 4, 4);
+			DESERT.passiveSpawnEntries.clear();
+			DESERT.addPassiveSpawnEntry(RABBIT, 4, 2, 3);
+
+			END.hostileSpawnEntries.clear();
+			END.addHostileSpawnEntry(ENDERMAN, 10, 4, 4);
+			END.passiveSpawnEntries.clear();
+
+			FLOWER_FOREST.addPassiveSpawnEntry(RABBIT, 4, 2, 3);
+
+			FOREST.addPassiveSpawnEntry(WOLF, 5, 4, 4);
+
+			NETHER.hostileSpawnEntries.clear();
+			NETHER.addHostileSpawnEntry(GHAST, 50, 4, 4);
+			NETHER.addHostileSpawnEntry(ZOMBIE_PIGMAN, 100, 4, 4);
+			NETHER.addHostileSpawnEntry(MAGMA_CUBE, 2, 4, 4);
+			NETHER.addHostileSpawnEntry(ENDERMAN, 1, 4, 4);
+			NETHER.passiveSpawnEntries.clear();
+
+			EXTREME_HILLS.addPassiveSpawnEntry(LLAMA, 5, 4, 6);
+
+			JUNGLE.addHostileSpawnEntry(OCELOT, 2, 1, 1);
+			JUNGLE.addPassiveSpawnEntry(PARROT, 40, 1, 2);
+			JUNGLE.addPassiveSpawnEntry(CHICKEN, 10, 4, 4);
+
+			MESA.passiveSpawnEntries.clear();
+
+			MUSHROOM_ISLAND.hostileSpawnEntries.clear();
+			MUSHROOM_ISLAND.passiveSpawnEntries.clear();
+			MUSHROOM_ISLAND.addPassiveSpawnEntry(MOOSHROOM, 8, 4, 8);
+
+			OCEAN.passiveSpawnEntries.clear();
+
+			PLAINS.addPassiveSpawnEntry(HORSE, 5, 2, 6);
+			PLAINS.addPassiveSpawnEntry(DONKEY, 1, 1, 3);
+
+			RIVER.passiveSpawnEntries.clear();
+
+			SAVANNA.addPassiveSpawnEntry(HORSE, 1, 2, 6);
+			SAVANNA.addPassiveSpawnEntry(DONKEY, 1, 1, 1);
+
+			SAVANNA_PLATEAU.addPassiveSpawnEntry(HORSE, 1, 2, 6);
+			SAVANNA_PLATEAU.addPassiveSpawnEntry(DONKEY, 1, 1, 1);
+			SAVANNA_PLATEAU.addPassiveSpawnEntry(LLAMA, 8, 4, 4);
+
+			SNOW.removeHostileSpawnEntry(SKELETON);
+			SNOW.addHostileSpawnEntry(SKELETON, 20, 4, 4);
+			SNOW.addHostileSpawnEntry(STRAY, 80, 4, 4);
+			SNOW.passiveSpawnEntries.clear();
+			SNOW.addPassiveSpawnEntry(RABBIT, 10, 2, 3);
+			SNOW.addPassiveSpawnEntry(POLAR_BEAR, 1, 1, 2);
+
+			SWAMP.addHostileSpawnEntry(SLIME, 1, 1, 1);
+
+			TAIGA.addPassiveSpawnEntry(WOLF, 8, 4, 4);
+			TAIGA.addPassiveSpawnEntry(RABBIT, 4, 2, 3);
+
+			WITCH_HUT.hostileSpawnEntries.clear();
+			WITCH_HUT.addHostileSpawnEntry(WITCH, 1, 1, 1);
+
+			MONUMENT.hostileSpawnEntries.clear();
+			MONUMENT.addHostileSpawnEntry(GUARDIAN, 1, 2, 4);
+
+			FORTRESS.hostileSpawnEntries.clear();
+			FORTRESS.addHostileSpawnEntry(BLAZE, 10, 2, 3);
+			FORTRESS.addHostileSpawnEntry(ZOMBIE_PIGMAN, 5, 4, 4);
+			FORTRESS.addHostileSpawnEntry(WITHER_SKELETON, 8, 5, 5);
+			FORTRESS.addHostileSpawnEntry(SKELETON, 2, 5, 5);
+			FORTRESS.addHostileSpawnEntry(MAGMA_CUBE, 3, 4, 4);
 		}
 	}
 

@@ -5,6 +5,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -27,11 +28,16 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.DefaultCaret;
@@ -39,12 +45,12 @@ import javax.swing.text.DefaultCaret;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import net.earthcomputer.lightningtool.MobList.BiomeType;
-import javax.swing.ListSelectionModel;
 
 @SuppressWarnings("all")
 public class MainFrame extends JFrame {
 
 	private AbstractManipulator manipulator;
+	private boolean initializing = true;
 
 	private JPanel contentPane;
 	private JTextField searchFromXTextField;
@@ -82,8 +88,8 @@ public class MainFrame extends JFrame {
 	private JCheckBox chckbxRainOnUsesExtraRand;
 	private JComboBox mobTypeComboBox;
 	private JComboBox biomeTypeComboBox;
-	private JTextField topBlockTextField;
 	private JTable spawnPriorityPlayerTable;
+	private JTable mobChunksTable;
 
 	/**
 	 * Launch the application.
@@ -127,6 +133,21 @@ public class MainFrame extends JFrame {
 		worldSeedTextField = new JTextField();
 		panel_3.add(worldSeedTextField);
 		worldSeedTextField.setColumns(10);
+		worldSeedTextField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				MobSpawnCalculator.recalculate(MainFrame.this, true, true);
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				MobSpawnCalculator.recalculate(MainFrame.this, true, true);
+			}
+		});
 
 		JPanel panel_1 = new JPanel();
 		panel_2.add(panel_1);
@@ -144,6 +165,21 @@ public class MainFrame extends JFrame {
 		searchFromXTextField.setText("0");
 		panel_1.add(searchFromXTextField);
 		searchFromXTextField.setColumns(10);
+		searchFromXTextField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				MobSpawnCalculator.recalculate(MainFrame.this, true, true);
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				MobSpawnCalculator.recalculate(MainFrame.this, true, true);
+			}
+		});
 
 		Component horizontalStrut_1 = Box.createHorizontalStrut(20);
 		panel_1.add(horizontalStrut_1);
@@ -155,6 +191,21 @@ public class MainFrame extends JFrame {
 		searchFromZTextField.setText("0");
 		panel_1.add(searchFromZTextField);
 		searchFromZTextField.setColumns(10);
+		searchFromZTextField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				MobSpawnCalculator.recalculate(MainFrame.this, true, true);
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				MobSpawnCalculator.recalculate(MainFrame.this, true, true);
+			}
+		});
 
 		JPanel panel_8 = new JPanel();
 		panel_2.add(panel_8);
@@ -170,29 +221,29 @@ public class MainFrame extends JFrame {
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 
-		JPanel panel = new JPanel();
-		tabbedPane.addTab("Lightning", null, panel, null);
-		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		JPanel lightningTab = new JPanel();
+		tabbedPane.addTab("Lightning", null, lightningTab, null);
+		lightningTab.setLayout(new BoxLayout(lightningTab, BoxLayout.Y_AXIS));
 
 		rdbtnHorseTraps = new JRadioButton("Horse traps");
 		rdbtnHorseTraps.setSelected(true);
 		buttonGroup.add(rdbtnHorseTraps);
-		panel.add(rdbtnHorseTraps);
+		lightningTab.add(rdbtnHorseTraps);
 
 		rdbtnChargedCreepers = new JRadioButton("Charged creepers");
 		buttonGroup.add(rdbtnChargedCreepers);
-		panel.add(rdbtnChargedCreepers);
+		lightningTab.add(rdbtnChargedCreepers);
 
 		rdbtnDependOnMoon = new JRadioButton("Either (could depend on moon phase)");
 		buttonGroup.add(rdbtnDependOnMoon);
-		panel.add(rdbtnDependOnMoon);
+		lightningTab.add(rdbtnDependOnMoon);
 
 		JPanel panel_6 = new JPanel();
 		FlowLayout flowLayout = (FlowLayout) panel_6.getLayout();
 		flowLayout.setAlignment(FlowLayout.LEFT);
 		flowLayout.setAlignOnBaseline(true);
 		panel_6.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panel.add(panel_6);
+		lightningTab.add(panel_6);
 
 		JLabel lblViewDistance = new JLabel("View distance:");
 		panel_6.add(lblViewDistance);
@@ -216,7 +267,7 @@ public class MainFrame extends JFrame {
 		FlowLayout flowLayout_1 = (FlowLayout) panel_7.getLayout();
 		flowLayout_1.setAlignment(FlowLayout.LEFT);
 		panel_7.setAlignmentX(0.0f);
-		panel.add(panel_7);
+		lightningTab.add(panel_7);
 
 		JLabel lblWantedChunkIteration = new JLabel("Wanted chunk iteration:");
 		panel_7.add(lblWantedChunkIteration);
@@ -228,11 +279,11 @@ public class MainFrame extends JFrame {
 
 		chckbxExact = new JCheckBox("Exact");
 		panel_7.add(chckbxExact);
-		panel.add(btnSearch);
+		lightningTab.add(btnSearch);
 
-		JPanel panel_9 = new JPanel();
-		tabbedPane.addTab("Weather", null, panel_9, null);
-		panel_9.setLayout(new BoxLayout(panel_9, BoxLayout.Y_AXIS));
+		JPanel weatherTab = new JPanel();
+		tabbedPane.addTab("Weather", null, weatherTab, null);
+		weatherTab.setLayout(new BoxLayout(weatherTab, BoxLayout.Y_AXIS));
 
 		chckbxManipulateThunder = new JCheckBox("Manipulate Thunder");
 		chckbxManipulateThunder.addItemListener(new ItemListener() {
@@ -244,12 +295,12 @@ public class MainFrame extends JFrame {
 				}
 			}
 		});
-		panel_9.add(chckbxManipulateThunder);
+		weatherTab.add(chckbxManipulateThunder);
 
 		thunderOptionsPanel = new JPanel();
 		thunderOptionsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		thunderOptionsPanel.setBorder(new LineBorder(UIManager.getColor("inactiveCaptionBorder")));
-		panel_9.add(thunderOptionsPanel);
+		weatherTab.add(thunderOptionsPanel);
 		thunderOptionsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 
 		JLabel lblThunderTime = new JLabel("Thunder time:");
@@ -279,12 +330,12 @@ public class MainFrame extends JFrame {
 				}
 			}
 		});
-		panel_9.add(chckbxManipulateRain);
+		weatherTab.add(chckbxManipulateRain);
 
 		rainOptionsPanel = new JPanel();
 		rainOptionsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		rainOptionsPanel.setBorder(new LineBorder(UIManager.getColor("inactiveCaptionBorder")));
-		panel_9.add(rainOptionsPanel);
+		weatherTab.add(rainOptionsPanel);
 		rainOptionsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 
 		JLabel lblRainTime = new JLabel("Rain time:");
@@ -312,7 +363,7 @@ public class MainFrame extends JFrame {
 				manipulator.startSearch(MainFrame.this);
 			}
 		});
-		panel_9.add(btnSearch_1);
+		weatherTab.add(btnSearch_1);
 
 		JPanel panel_4 = new JPanel();
 		contentPane.add(panel_4, BorderLayout.SOUTH);
@@ -343,12 +394,12 @@ public class MainFrame extends JFrame {
 		setEnabled(thunderOptionsPanel, false);
 		setEnabled(rainOptionsPanel, false);
 
-		JPanel panel_11 = new JPanel();
-		tabbedPane.addTab("Scheduler", null, panel_11, null);
-		panel_11.setLayout(new BoxLayout(panel_11, BoxLayout.Y_AXIS));
+		JPanel schedulerTab = new JPanel();
+		tabbedPane.addTab("Scheduler", null, schedulerTab, null);
+		schedulerTab.setLayout(new BoxLayout(schedulerTab, BoxLayout.Y_AXIS));
 
 		JPanel panel_13 = new JPanel();
-		panel_11.add(panel_13);
+		schedulerTab.add(panel_13);
 		panel_13.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 
 		JLabel lblThunderOfftime = new JLabel("Thunder off-time:");
@@ -365,7 +416,7 @@ public class MainFrame extends JFrame {
 		JPanel panel_14 = new JPanel();
 		FlowLayout flowLayout_2 = (FlowLayout) panel_14.getLayout();
 		flowLayout_2.setAlignment(FlowLayout.LEFT);
-		panel_11.add(panel_14);
+		schedulerTab.add(panel_14);
 
 		JLabel lblThunderOntime = new JLabel("Thunder on-time:");
 		panel_14.add(lblThunderOntime);
@@ -380,7 +431,7 @@ public class MainFrame extends JFrame {
 		JPanel panel_15 = new JPanel();
 		FlowLayout flowLayout_3 = (FlowLayout) panel_15.getLayout();
 		flowLayout_3.setAlignment(FlowLayout.LEFT);
-		panel_11.add(panel_15);
+		schedulerTab.add(panel_15);
 
 		JLabel lblRainOfftime = new JLabel("Rain off-time:");
 		panel_15.add(lblRainOfftime);
@@ -396,7 +447,7 @@ public class MainFrame extends JFrame {
 		JPanel panel_16 = new JPanel();
 		FlowLayout flowLayout_4 = (FlowLayout) panel_16.getLayout();
 		flowLayout_4.setAlignment(FlowLayout.LEFT);
-		panel_11.add(panel_16);
+		schedulerTab.add(panel_16);
 
 		JLabel lblRainOntime = new JLabel("Rain on-time:");
 		panel_16.add(lblRainOntime);
@@ -411,7 +462,7 @@ public class MainFrame extends JFrame {
 		JPanel panel_17 = new JPanel();
 		FlowLayout flowLayout_5 = (FlowLayout) panel_17.getLayout();
 		flowLayout_5.setAlignment(FlowLayout.LEFT);
-		panel_11.add(panel_17);
+		schedulerTab.add(panel_17);
 
 		JLabel lblMessageSendTime = new JLabel("Signal delay:");
 		panel_17.add(lblMessageSendTime);
@@ -424,7 +475,7 @@ public class MainFrame extends JFrame {
 		JPanel panel_18 = new JPanel();
 		FlowLayout flowLayout_6 = (FlowLayout) panel_18.getLayout();
 		flowLayout_6.setAlignment(FlowLayout.LEFT);
-		panel_11.add(panel_18);
+		schedulerTab.add(panel_18);
 
 		JButton btnCalculate = new JButton("Calculate");
 		btnCalculate.addActionListener(new ActionListener() {
@@ -439,78 +490,27 @@ public class MainFrame extends JFrame {
 		});
 		panel_18.add(btnCalculate);
 
-		JPanel panel_19 = new JPanel();
-		tabbedPane.addTab("Mobs", null, panel_19, null);
-		panel_19.setLayout(new BoxLayout(panel_19, BoxLayout.Y_AXIS));
+		JPanel mobSpawningTab = new JPanel();
+		tabbedPane.addTab("Mobs", null, mobSpawningTab, null);
+		mobSpawningTab.setLayout(new BoxLayout(mobSpawningTab, BoxLayout.X_AXIS));
 
-		JPanel panel_20 = new JPanel();
-		FlowLayout flowLayout_7 = (FlowLayout) panel_20.getLayout();
-		flowLayout_7.setAlignment(FlowLayout.LEFT);
-		panel_19.add(panel_20);
+		JTabbedPane tabbedPane_1 = new JTabbedPane(JTabbedPane.TOP);
+		mobSpawningTab.add(tabbedPane_1);
 
-		JLabel lblMobToSpawn = new JLabel("Mob to spawn:");
-		panel_20.add(lblMobToSpawn);
-
-		mobTypeComboBox = new JComboBox(MobList.getValidMobsArray());
-		mobTypeComboBox.setSelectedIndex(12);
-		AutoCompleteDecorator.decorate(mobTypeComboBox);
-		panel_20.add(mobTypeComboBox);
-
-		JPanel panel_21 = new JPanel();
-		FlowLayout flowLayout_8 = (FlowLayout) panel_21.getLayout();
-		flowLayout_8.setAlignment(FlowLayout.LEFT);
-		panel_19.add(panel_21);
-
-		JLabel lblBiome = new JLabel("Biome type:");
-		panel_21.add(lblBiome);
-
-		biomeTypeComboBox = new JComboBox();
-		biomeTypeComboBox.setModel(new DefaultComboBoxModel(BiomeType.values()));
-		panel_21.add(biomeTypeComboBox);
-
-		JPanel panel_12 = new JPanel();
-		FlowLayout flowLayout_10 = (FlowLayout) panel_12.getLayout();
-		flowLayout_10.setAlignment(FlowLayout.LEFT);
-		panel_19.add(panel_12);
-
-		JLabel lblSubchunks = new JLabel("Top block:");
-		panel_12.add(lblSubchunks);
-
-		topBlockTextField = new JTextField();
-		topBlockTextField.setText("63");
-		panel_12.add(topBlockTextField);
-		topBlockTextField.setColumns(10);
-
-		JPanel panel_22 = new JPanel();
-		FlowLayout flowLayout_9 = (FlowLayout) panel_22.getLayout();
-		flowLayout_9.setAlignment(FlowLayout.LEFT);
-		panel_19.add(panel_22);
-
-		JButton btnCalculate_1 = new JButton("Calculate");
-		btnCalculate_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				if (manipulator != null)
-					manipulator.stop();
-				manipulator = new MobSpawningManipulator();
-				manipulator.startSearch(MainFrame.this);
-			}
-		});
-		panel_22.add(btnCalculate_1);
-
-		JPanel panel_23 = new JPanel();
-		tabbedPane.addTab("Spawn Priority", null, panel_23, null);
-		panel_23.setLayout(new BoxLayout(panel_23, BoxLayout.Y_AXIS));
+		JPanel playerPositionsTab = new JPanel();
+		tabbedPane_1.addTab("Player positions", null, playerPositionsTab, null);
+		playerPositionsTab.setLayout(new BoxLayout(playerPositionsTab, BoxLayout.Y_AXIS));
 
 		JPanel panel_25 = new JPanel();
 		FlowLayout flowLayout_11 = (FlowLayout) panel_25.getLayout();
 		flowLayout_11.setAlignment(FlowLayout.LEFT);
-		panel_23.add(panel_25);
+		playerPositionsTab.add(panel_25);
 
 		JLabel lblPlayers = new JLabel("Players:");
 		panel_25.add(lblPlayers);
 
 		JPanel panel_24 = new JPanel();
-		panel_23.add(panel_24);
+		playerPositionsTab.add(panel_24);
 		panel_24.setLayout(new BoxLayout(panel_24, BoxLayout.X_AXIS));
 
 		JScrollPane scrollPane_2 = new JScrollPane();
@@ -526,6 +526,8 @@ public class MainFrame extends JFrame {
 					return super.prepareRenderer(renderer, row, col);
 			}
 		};
+		spawnPriorityPlayerTable.setRowSelectionAllowed(false);
+		spawnPriorityPlayerTable.setCellSelectionEnabled(true);
 		spawnPriorityPlayerTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		spawnPriorityPlayerTable.setModel(
 				new DefaultTableModel(new Object[][] { { null, null, null }, }, new String[] { "#", "X", "Z" }) {
@@ -542,10 +544,25 @@ public class MainFrame extends JFrame {
 		spawnPriorityPlayerTable.getColumnModel().getColumn(2).setResizable(false);
 		spawnPriorityPlayerTable.getColumnModel().getColumn(2).setPreferredWidth(150);
 		spawnPriorityPlayerTable.setValueAt(1, 0, 0);
+		spawnPriorityPlayerTable.getDefaultEditor(Integer.class).addCellEditorListener(new CellEditorListener() {
+			@Override
+			public void editingCanceled(ChangeEvent e) {
+			}
+
+			@Override
+			public void editingStopped(ChangeEvent e) {
+				if (!initializing) {
+					if (manipulator != null)
+						manipulator.stop();
+					manipulator = null;
+					MobSpawnCalculator.recalculate(MainFrame.this, true, false);
+				}
+			}
+		});
 		scrollPane_2.setViewportView(spawnPriorityPlayerTable);
 
 		JPanel panel_26 = new JPanel();
-		panel_23.add(panel_26);
+		playerPositionsTab.add(panel_26);
 
 		JButton btnAddPlayer = new JButton("Add Player");
 		btnAddPlayer.addActionListener(new ActionListener() {
@@ -565,6 +582,10 @@ public class MainFrame extends JFrame {
 					for (int i = 0; i < spawnPriorityPlayerTable.getRowCount(); i++) {
 						spawnPriorityPlayerTable.setValueAt(i + 1, i, 0);
 					}
+					if (manipulator != null)
+						manipulator.stop();
+					manipulator = null;
+					MobSpawnCalculator.recalculate(MainFrame.this, true, false);
 				}
 			}
 		});
@@ -581,6 +602,10 @@ public class MainFrame extends JFrame {
 					model.removeRow(row - 1);
 					model.insertRow(row, new Object[] { row + 1, x, y });
 					model.setValueAt(row, row - 1, 0);
+					if (manipulator != null)
+						manipulator.stop();
+					manipulator = null;
+					MobSpawnCalculator.recalculate(MainFrame.this, true, false);
 				}
 			}
 		});
@@ -597,30 +622,185 @@ public class MainFrame extends JFrame {
 					model.removeRow(row + 1);
 					model.insertRow(row, new Object[] { row + 1, x, y });
 					model.setValueAt(row + 2, row + 1, 0);
+					if (manipulator != null)
+						manipulator.stop();
+					manipulator = null;
+					MobSpawnCalculator.recalculate(MainFrame.this, true, false);
 				}
 			}
 		});
 		panel_26.add(btnMoveDown);
 
-		JPanel panel_27 = new JPanel();
-		panel_23.add(panel_27);
+		JPanel mobSpawnSettingsTab = new JPanel();
+		tabbedPane_1.addTab("Settings", null, mobSpawnSettingsTab, null);
+		mobSpawnSettingsTab.setLayout(new BoxLayout(mobSpawnSettingsTab, BoxLayout.Y_AXIS));
 
-		JButton btnCalculate_2 = new JButton("Calculate");
-		btnCalculate_2.addActionListener(new ActionListener() {
+		JPanel panel_20 = new JPanel();
+		FlowLayout flowLayout_7 = (FlowLayout) panel_20.getLayout();
+		flowLayout_7.setAlignment(FlowLayout.LEFT);
+		mobSpawnSettingsTab.add(panel_20);
+
+		JLabel lblMobToSpawn = new JLabel("Mob to spawn:");
+		panel_20.add(lblMobToSpawn);
+
+		mobTypeComboBox = new JComboBox(MobList.getValidMobsArray());
+		mobTypeComboBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				if (manipulator != null)
-					manipulator.stop();
-				SpawnPriorityFinder.calculate(MainFrame.this);
+				if (!initializing) {
+					if (manipulator != null)
+						manipulator.stop();
+					manipulator = null;
+					MobSpawnCalculator.recalculate(MainFrame.this, true, false);
+				}
 			}
 		});
-		panel_27.add(btnCalculate_2);
+		mobTypeComboBox.setSelectedIndex(23);
+		AutoCompleteDecorator.decorate(mobTypeComboBox);
+		panel_20.add(mobTypeComboBox);
 
-		JPanel panel_10 = new JPanel();
-		tabbedPane.addTab("Output", null, panel_10, null);
-		panel_10.setLayout(new BoxLayout(panel_10, BoxLayout.X_AXIS));
+		JPanel panel_21 = new JPanel();
+		FlowLayout flowLayout_8 = (FlowLayout) panel_21.getLayout();
+		flowLayout_8.setAlignment(FlowLayout.LEFT);
+		mobSpawnSettingsTab.add(panel_21);
+
+		JLabel lblBiome = new JLabel("Biome type:");
+		panel_21.add(lblBiome);
+
+		biomeTypeComboBox = new JComboBox();
+		biomeTypeComboBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (!initializing) {
+					if (manipulator != null)
+						manipulator.stop();
+					manipulator = null;
+					MobSpawnCalculator.recalculate(MainFrame.this, true, false);
+				}
+			}
+		});
+		biomeTypeComboBox.setModel(new DefaultComboBoxModel(BiomeType.values()));
+		panel_21.add(biomeTypeComboBox);
+
+		JPanel mobChunksTab = new JPanel();
+		tabbedPane_1.addTab("Chunks", null, mobChunksTab, null);
+		mobChunksTab.setLayout(new BoxLayout(mobChunksTab, BoxLayout.Y_AXIS));
 
 		JScrollPane scrollPane_1 = new JScrollPane();
-		tabbedPane.addTab("About", null, scrollPane_1, null);
+		mobChunksTab.add(scrollPane_1);
+
+		mobChunksTable = new JTable() {
+			@Override
+			public Component prepareRenderer(TableCellRenderer renderer, int row, int col) {
+				if (col == 0) {
+					return getTableHeader().getDefaultRenderer().getTableCellRendererComponent(this,
+							getValueAt(row, col), false, false, row, col);
+				} else if (col == 3 || col == 8) {
+					Component c = super.prepareRenderer(renderer, row, col);
+					if (getValueAt(row, col).equals(mobTypeComboBox.getSelectedItem())) {
+						c.setFont(c.getFont().deriveFont(Font.BOLD | Font.ITALIC));
+					}
+					return c;
+				} else {
+					return super.prepareRenderer(renderer, row, col);
+				}
+			}
+		};
+		mobChunksTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		mobChunksTable.setCellSelectionEnabled(true);
+		mobChunksTable.setRowSelectionAllowed(false);
+		mobChunksTable.setColumnSelectionAllowed(false);
+		mobChunksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		mobChunksTable.setModel(new DefaultTableModel(
+				new Object[][] { { null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+						null, null, null, null, null, null, null }, },
+				new String[] { "#", "Chunk X", "Chunk Z", "Hostile", "Hostile Max Y", "Hostile X", "Hostile Y",
+						"Hostile Z", "Passive", "Passive Max Y", "Passive X", "Passive Y", "Passive Z", "Bat Max Y",
+						"Bat X", "Bat Y", "Bat Z", "Squid Max Y", "Squid X", "Squid Y", "Squid Z" }) {
+			Class[] columnTypes = new Class[] { Object.class, Integer.class, Integer.class, Object.class, Integer.class,
+					Integer.class, Integer.class, Integer.class, Object.class, Integer.class, Integer.class,
+					Integer.class, Integer.class, Integer.class, Integer.class, Integer.class, Integer.class,
+					Integer.class, Integer.class, Integer.class, Integer.class };
+
+			public Class getColumnClass(int columnIndex) {
+				return columnTypes[columnIndex];
+			}
+
+			boolean[] columnEditables = new boolean[] { false, false, false, false, true, false, false, false, false,
+					true, false, false, false, true, false, false, false, true, false, false, false };
+
+			public boolean isCellEditable(int row, int column) {
+				return columnEditables[column];
+			}
+		});
+		mobChunksTable.getColumnModel().getColumn(0).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(0).setPreferredWidth(30);
+		mobChunksTable.getColumnModel().getColumn(0).setMinWidth(30);
+		mobChunksTable.getColumnModel().getColumn(1).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(1).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(2).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(2).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(3).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(3).setPreferredWidth(150);
+		mobChunksTable.getColumnModel().getColumn(3).setMinWidth(150);
+		mobChunksTable.getColumnModel().getColumn(4).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(4).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(5).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(5).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(6).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(6).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(7).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(7).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(8).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(8).setPreferredWidth(150);
+		mobChunksTable.getColumnModel().getColumn(8).setMinWidth(150);
+		mobChunksTable.getColumnModel().getColumn(9).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(9).setPreferredWidth(80);
+		mobChunksTable.getColumnModel().getColumn(9).setMinWidth(80);
+		mobChunksTable.getColumnModel().getColumn(10).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(10).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(11).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(11).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(12).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(12).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(13).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(13).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(14).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(14).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(15).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(15).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(16).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(16).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(17).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(17).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(18).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(18).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(19).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(19).setMinWidth(75);
+		mobChunksTable.getColumnModel().getColumn(20).setResizable(false);
+		mobChunksTable.getColumnModel().getColumn(20).setMinWidth(75);
+		mobChunksTable.getDefaultEditor(Integer.class).addCellEditorListener(new CellEditorListener() {
+			@Override
+			public void editingCanceled(ChangeEvent e) {
+			}
+
+			@Override
+			public void editingStopped(ChangeEvent e) {
+				if (!initializing) {
+					if (manipulator != null)
+						manipulator.stop();
+					manipulator = null;
+					MobSpawnCalculator.recalculate(MainFrame.this, false, false);
+				}
+			}
+		});
+		((DefaultTableModel) mobChunksTable.getModel()).removeRow(0);
+		scrollPane_1.setViewportView(mobChunksTable);
+
+		JPanel outputTab = new JPanel();
+		tabbedPane.addTab("Output", null, outputTab, null);
+		outputTab.setLayout(new BoxLayout(outputTab, BoxLayout.X_AXIS));
+
+		JScrollPane aboutTab = new JScrollPane();
+		tabbedPane.addTab("About", null, aboutTab, null);
 
 		JTextArea txtrAbout = new JTextArea();
 		txtrAbout.setFocusable(false);
@@ -632,17 +812,19 @@ public class MainFrame extends JFrame {
 		txtrAbout.setForeground(UIManager.getColor("Label.foreground"));
 		txtrAbout.setBackground(UIManager.getColor("Label.background"));
 		txtrAbout.setEditable(false);
-		scrollPane_1.setViewportView(txtrAbout);
+		aboutTab.setViewportView(txtrAbout);
 
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		panel_10.add(scrollPane);
+		outputTab.add(scrollPane);
 
 		outputTextArea = new JTextArea();
 		scrollPane.setViewportView(outputTextArea);
 		outputTextArea.setEditable(false);
 		DefaultCaret caret = (DefaultCaret) outputTextArea.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+		initializing = false;
 	}
 
 	private void setEnabled(Container container, boolean enabled) {
@@ -776,11 +958,11 @@ public class MainFrame extends JFrame {
 		return biomeTypeComboBox;
 	}
 
-	public JTextField getTopBlockTextField() {
-		return topBlockTextField;
-	}
-
 	public JTable getSpawnPriorityPlayerTable() {
 		return spawnPriorityPlayerTable;
+	}
+
+	public JTable getMobChunksTable() {
+		return mobChunksTable;
 	}
 }

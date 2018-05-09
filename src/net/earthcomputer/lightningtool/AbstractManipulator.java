@@ -27,11 +27,7 @@ public abstract class AbstractManipulator {
 		this.frame = frame;
 
 		JTextField seedField = frame.getWorldSeedTextField();
-		try {
-			worldSeed = Long.parseLong(seedField.getText());
-		} catch (NumberFormatException e) {
-			worldSeed = seedField.getText().hashCode();
-		}
+		worldSeed = parseWorldSeed(seedField.getText());
 
 		try {
 			fromX = Integer.parseInt(frame.getSearchFromXTextField().getText());
@@ -74,6 +70,14 @@ public abstract class AbstractManipulator {
 		thread.start();
 	}
 
+	public static long parseWorldSeed(String seed) {
+		try {
+			return Long.parseLong(seed);
+		} catch (NumberFormatException e) {
+			return seed.hashCode();
+		}
+	}
+
 	protected boolean parseExtra() {
 		return true;
 	}
@@ -110,10 +114,14 @@ public abstract class AbstractManipulator {
 		frame.getProgressBar().setString(count + " regions searched");
 	}
 
-	protected void resetSeed(int x, int z) {
+	public static void resetSeed(Random rand, int x, int z, long worldSeed) {
 		rand.setSeed(x * 341873128712L + z * 132897987541L + worldSeed + 10387319);
 		for (int i = 0; i < 4; i++)
 			rand.nextInt();
+	}
+
+	protected void resetSeed(int x, int z) {
+		resetSeed(rand, x, z, worldSeed);
 		for (int i = 0; i < extraRandCalls; i++)
 			rand.nextInt();
 	}
