@@ -695,7 +695,7 @@ public class MainFrame extends JFrame {
 							getValueAt(row, col), false, false, row, col);
 				} else if (col == 3 || col == 8) {
 					Component c = super.prepareRenderer(renderer, row, col);
-					if (getValueAt(row, col).equals(mobTypeComboBox.getSelectedItem())) {
+					if (mobTypeComboBox.getSelectedItem().equals(getValueAt(row, col))) {
 						c.setFont(c.getFont().deriveFont(Font.BOLD | Font.ITALIC));
 					}
 					return c;

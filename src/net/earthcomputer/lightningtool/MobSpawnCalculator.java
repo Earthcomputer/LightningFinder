@@ -1,16 +1,16 @@
 package net.earthcomputer.lightningtool;
 
 import java.awt.Color;
-import java.awt.Font;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.JTable;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 public class MobSpawnCalculator {
@@ -76,7 +76,6 @@ public class MobSpawnCalculator {
 		table = frame.getMobChunksTable();
 		DefaultTableModel model = (DefaultTableModel) table.getModel();
 
-		String targetMobClass = (String) frame.getMobTypeComboBox().getSelectedItem();
 		MobList.BiomeType biome = (MobList.BiomeType) frame.getBiomeTypeComboBox().getSelectedItem();
 
 		// Enumerate eligible chunks
@@ -117,10 +116,25 @@ public class MobSpawnCalculator {
 		AbstractManipulator.resetSeed(rand, regionX, regionZ, worldSeed);
 
 		// Simulate the spawning algorithm
-		mobTypeLoop: for (int mobType = 0; mobType < MOB_TYPE_COUNT; mobType++) {
+		long beforePassiveSeed = 0;
+		for (int mobType = 0; mobType < MOB_TYPE_COUNT; mobType++) {
+			// Reset the seed after passive because passive only happens occasionally
+			if (mobType == MOB_TYPE_PASSIVE) {
+				try {
+					Field field = Random.class.getDeclaredField("seed");
+					field.setAccessible(true);
+					beforePassiveSeed = ((AtomicLong) field.get(rand)).get();
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			} else if (mobType == MOB_TYPE_PASSIVE + 1) {
+				rand.setSeed(beforePassiveSeed ^ 0x5deece66dL);
+			}
+
 			Iterator<ChunkPos> eligibleChunksItr = eligibleChunks.iterator();
 			int chunkNo = 0;
 			while (eligibleChunksItr.hasNext()) {
+				// Add row in table if it does not exist
 				ChunkPos chunk = eligibleChunksItr.next();
 				if (chunkNo >= table.getRowCount()) {
 					model.addRow(new Object[table.getColumnCount()]);
@@ -129,6 +143,7 @@ public class MobSpawnCalculator {
 					model.setValueAt(chunk.getZ(), chunkNo, 2);
 				}
 
+				// Choose spawn location
 				int xPos = chunk.getX() * 16 + rand.nextInt(16);
 				int yHeight = chunkNo >= yHeights[mobType].size() ? -1 : yHeights[mobType].get(chunkNo);
 				if (yHeight <= 0) {
@@ -141,6 +156,9 @@ public class MobSpawnCalculator {
 				xPos += rand.nextInt(6) - rand.nextInt(6);
 				yPos += rand.nextInt(1) - rand.nextInt(1);
 				zPos += rand.nextInt(6) - rand.nextInt(6);
+
+				// Choose mob type
+				boolean willSpawnMob = true;
 
 				if (mobType == MOB_TYPE_HOSTILE || mobType == MOB_TYPE_PASSIVE) {
 					List<MobList.SpawnEntry> spawnEntries;
@@ -160,17 +178,28 @@ public class MobSpawnCalculator {
 							}
 						}
 					}
-					if (spawnEntry == null)
-						continue mobTypeLoop;
-					String mobClass = spawnEntry.getMobType();
+					String mobClass;
+					if (spawnEntry == null) {
+						mobClass = null;
+						willSpawnMob = false;
+					} else {
+						mobClass = spawnEntry.getMobType();
+					}
 					model.setValueAt(mobClass, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] - 1);
 				} else {
 					rand.nextInt(); // A weighted list of 1 element
 				}
 
-				model.setValueAt(xPos, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 1);
-				model.setValueAt(yPos, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 2);
-				model.setValueAt(zPos, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 3);
+				// Write position to table
+				if (willSpawnMob) {
+					model.setValueAt(xPos, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 1);
+					model.setValueAt(yPos, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 2);
+					model.setValueAt(zPos, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 3);
+				} else {
+					model.setValueAt(null, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 1);
+					model.setValueAt(null, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 2);
+					model.setValueAt(null, chunkNo, MOB_Y_HEIGHT_COLUMN_INDEXES[mobType] + 3);
+				}
 
 				chunkNo++;
 			}
