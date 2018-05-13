@@ -84,7 +84,8 @@ public class FortuneManipulator extends AbstractManipulator {
 			return Optional.empty();
 		}
 
-		if (quantityDropped >= dropAmount && xpDropped >= xpDropAmount) {
+		if (quantityDroppedWanted && (!manipulateXp || xpDroppedWanted) && quantityDropped >= dropAmount
+				&& xpDropped >= xpDropAmount) {
 			stop();
 		}
 
