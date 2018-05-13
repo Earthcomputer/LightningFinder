@@ -99,6 +99,7 @@ public class MainFrame extends JFrame {
 	private JCheckBox chckbxManipulateXp;
 	private JCheckBox chckbxXpExact;
 	private JTextField fortuneLevelTextField;
+	private JComboBox advancerComboBox;
 
 	/**
 	 * Launch the application.
@@ -226,6 +227,13 @@ public class MainFrame extends JFrame {
 		extraRandCallsTextField.setText("0");
 		panel_8.add(extraRandCallsTextField);
 		extraRandCallsTextField.setColumns(10);
+
+		JLabel lblAdvancer = new JLabel("Advancer:");
+		panel_8.add(lblAdvancer);
+
+		advancerComboBox = new JComboBox();
+		advancerComboBox.setModel(new DefaultComboBoxModel(RNGAdvancer.values()));
+		panel_8.add(advancerComboBox);
 
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
@@ -1107,5 +1115,9 @@ public class MainFrame extends JFrame {
 
 	public JTextField getFortuneLevelTextField() {
 		return fortuneLevelTextField;
+	}
+
+	public JComboBox getAdvancerComboBox() {
+		return advancerComboBox;
 	}
 }

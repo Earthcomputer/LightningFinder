@@ -20,6 +20,7 @@ public abstract class AbstractManipulator {
 	protected volatile boolean searching;
 
 	protected int extraRandCalls;
+	protected RNGAdvancer advancer;
 
 	protected Random rand = new Random();
 
@@ -52,6 +53,7 @@ public abstract class AbstractManipulator {
 			setErrorMessage("Invalid extra rand calls");
 			return;
 		}
+		advancer = (RNGAdvancer) frame.getAdvancerComboBox().getSelectedItem();
 
 		if (!parseExtra()) {
 			return;
@@ -123,7 +125,7 @@ public abstract class AbstractManipulator {
 	protected void resetSeed(int x, int z) {
 		resetSeed(rand, x, z, worldSeed);
 		for (int i = 0; i < extraRandCalls; i++)
-			rand.nextInt();
+			advancer.advance(rand);
 	}
 
 	protected abstract Optional<String> testRegion(int x, int z);
