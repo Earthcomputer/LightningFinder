@@ -44,6 +44,7 @@ import javax.swing.text.DefaultCaret;
 
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
+import net.earthcomputer.lightningtool.FortuneManipulator.Ore;
 import net.earthcomputer.lightningtool.MobList.BiomeType;
 
 @SuppressWarnings("all")
@@ -90,6 +91,14 @@ public class MainFrame extends JFrame {
 	private JComboBox biomeTypeComboBox;
 	private JTable spawnPriorityPlayerTable;
 	private JTable mobChunksTable;
+	private JTextField dropAmountTextField;
+	private JPanel xpPanel;
+	private JTextField xpDroppedTextField;
+	private JComboBox oreComboBox;
+	private JCheckBox chckbxDropAmountExact;
+	private JCheckBox chckbxManipulateXp;
+	private JCheckBox chckbxXpExact;
+	private JTextField fortuneLevelTextField;
 
 	/**
 	 * Launch the application.
@@ -114,7 +123,7 @@ public class MainFrame extends JFrame {
 		setResizable(false);
 		setTitle("Lightning Machine Tool");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 540, 412);
+		setBounds(100, 100, 540, 424);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
@@ -795,6 +804,112 @@ public class MainFrame extends JFrame {
 		((DefaultTableModel) mobChunksTable.getModel()).removeRow(0);
 		scrollPane_1.setViewportView(mobChunksTable);
 
+		JPanel fortuneTab = new JPanel();
+		tabbedPane.addTab("Fortune", null, fortuneTab, null);
+		fortuneTab.setLayout(new BoxLayout(fortuneTab, BoxLayout.Y_AXIS));
+
+		JPanel panel = new JPanel();
+		FlowLayout flowLayout_9 = (FlowLayout) panel.getLayout();
+		flowLayout_9.setAlignment(FlowLayout.LEFT);
+		fortuneTab.add(panel);
+
+		JLabel lblOre = new JLabel("Ore:");
+		panel.add(lblOre);
+
+		oreComboBox = new JComboBox();
+		oreComboBox.setModel(new DefaultComboBoxModel(Ore.values()));
+		panel.add(oreComboBox);
+
+		JPanel panel_9 = new JPanel();
+		FlowLayout flowLayout_10 = (FlowLayout) panel_9.getLayout();
+		flowLayout_10.setAlignment(FlowLayout.LEFT);
+		fortuneTab.add(panel_9);
+
+		JLabel lblAmount = new JLabel("Amount:");
+		panel_9.add(lblAmount);
+
+		dropAmountTextField = new JTextField();
+		panel_9.add(dropAmountTextField);
+		dropAmountTextField.setColumns(10);
+
+		chckbxDropAmountExact = new JCheckBox("Exact");
+		panel_9.add(chckbxDropAmountExact);
+
+		JPanel panel_11 = new JPanel();
+		FlowLayout flowLayout_12 = (FlowLayout) panel_11.getLayout();
+		flowLayout_12.setAlignment(FlowLayout.LEFT);
+		fortuneTab.add(panel_11);
+
+		JPanel panel_10 = new JPanel();
+		panel_11.add(panel_10);
+		panel_10.setLayout(new BoxLayout(panel_10, BoxLayout.Y_AXIS));
+
+		JPanel panel_12 = new JPanel();
+		FlowLayout flowLayout_13 = (FlowLayout) panel_12.getLayout();
+		flowLayout_13.setAlignment(FlowLayout.LEFT);
+		panel_10.add(panel_12);
+
+		chckbxManipulateXp = new JCheckBox("Manipulate XP");
+		chckbxManipulateXp.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					setEnabled(xpPanel, true);
+				} else if (e.getStateChange() == ItemEvent.DESELECTED) {
+					setEnabled(xpPanel, false);
+				}
+			}
+		});
+		panel_12.add(chckbxManipulateXp);
+
+		xpPanel = new JPanel();
+		FlowLayout fl_xpPanel = (FlowLayout) xpPanel.getLayout();
+		fl_xpPanel.setAlignment(FlowLayout.LEFT);
+		panel_10.add(xpPanel);
+
+		Component horizontalStrut_2 = Box.createHorizontalStrut(20);
+		xpPanel.add(horizontalStrut_2);
+
+		JLabel lblXpDropped = new JLabel("XP dropped:");
+		xpPanel.add(lblXpDropped);
+
+		xpDroppedTextField = new JTextField();
+		xpPanel.add(xpDroppedTextField);
+		xpDroppedTextField.setColumns(10);
+
+		chckbxXpExact = new JCheckBox("Exact");
+		xpPanel.add(chckbxXpExact);
+
+		setEnabled(xpPanel, false);
+
+		JPanel panel_22 = new JPanel();
+		FlowLayout flowLayout_15 = (FlowLayout) panel_22.getLayout();
+		flowLayout_15.setAlignment(FlowLayout.LEFT);
+		fortuneTab.add(panel_22);
+
+		JLabel lblFortuneLevel = new JLabel("Fortune level:");
+		panel_22.add(lblFortuneLevel);
+
+		fortuneLevelTextField = new JTextField();
+		fortuneLevelTextField.setText("3");
+		panel_22.add(fortuneLevelTextField);
+		fortuneLevelTextField.setColumns(10);
+
+		JPanel panel_19 = new JPanel();
+		FlowLayout flowLayout_14 = (FlowLayout) panel_19.getLayout();
+		flowLayout_14.setAlignment(FlowLayout.LEFT);
+		fortuneTab.add(panel_19);
+
+		JButton btnCalculate_1 = new JButton("Calculate");
+		btnCalculate_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (manipulator != null)
+					manipulator.stop();
+				manipulator = new FortuneManipulator();
+				manipulator.startSearch(MainFrame.this);
+			}
+		});
+		panel_19.add(btnCalculate_1);
+
 		JPanel outputTab = new JPanel();
 		tabbedPane.addTab("Output", null, outputTab, null);
 		outputTab.setLayout(new BoxLayout(outputTab, BoxLayout.X_AXIS));
@@ -964,5 +1079,33 @@ public class MainFrame extends JFrame {
 
 	public JTable getMobChunksTable() {
 		return mobChunksTable;
+	}
+
+	public JComboBox getOreComboBox() {
+		return oreComboBox;
+	}
+
+	public JTextField getDropAmountTextField() {
+		return dropAmountTextField;
+	}
+
+	public JCheckBox getChckbxDropAmountExact() {
+		return chckbxDropAmountExact;
+	}
+
+	public JCheckBox getChckbxManipulateXp() {
+		return chckbxManipulateXp;
+	}
+
+	public JTextField getXpDroppedTextField() {
+		return xpDroppedTextField;
+	}
+
+	public JCheckBox getChckbxXpExact() {
+		return chckbxXpExact;
+	}
+
+	public JTextField getFortuneLevelTextField() {
+		return fortuneLevelTextField;
 	}
 }

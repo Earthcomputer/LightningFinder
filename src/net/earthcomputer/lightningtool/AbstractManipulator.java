@@ -111,7 +111,7 @@ public abstract class AbstractManipulator {
 				});
 			}
 		}
-		frame.getProgressBar().setString(count + " regions searched");
+		SwingUtilities.invokeLater(() -> frame.getProgressBar().setString(count + " regions searched"));
 	}
 
 	public static void resetSeed(Random rand, int x, int z, long worldSeed) {
