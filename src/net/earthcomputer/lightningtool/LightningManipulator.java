@@ -9,8 +9,10 @@ public class LightningManipulator extends AbstractManipulator {
 	private int chunkCount;
 	private int wantedChunkIteration;
 	private boolean exact;
-	
+
 	private int bestChunkIdx = Integer.MAX_VALUE;
+	private int curRegionX = Integer.MAX_VALUE;
+	private int curRegionZ = Integer.MAX_VALUE;
 
 	@Override
 	protected boolean parseExtra() {
@@ -41,7 +43,7 @@ public class LightningManipulator extends AbstractManipulator {
 				}
 			}
 		}
-		
+
 		try {
 			wantedChunkIteration = Integer.parseInt(frame.getWantedChunkIterationTextField().getText());
 			if (wantedChunkIteration < 0 || wantedChunkIteration >= chunkCount) {
@@ -51,7 +53,7 @@ public class LightningManipulator extends AbstractManipulator {
 			setErrorMessage("Invalid wanted chunk iteration");
 			return false;
 		}
-		
+
 		exact = frame.getChckbxExact().isSelected();
 
 		return true;
@@ -73,11 +75,15 @@ public class LightningManipulator extends AbstractManipulator {
 					} else {
 						isWanted = chunkIdx < bestChunkIdx;
 					}
-					
+
 					if (isWanted) {
-						bestChunkIdx = chunkIdx;
-						if (chunkIdx <= wantedChunkIteration)
-							stop();
+						if (x != curRegionX || z != curRegionZ) {
+							curRegionX = x;
+							curRegionZ = z;
+							bestChunkIdx = chunkIdx;
+							if (chunkIdx <= wantedChunkIteration)
+								stop();
+						}
 						return Optional.of(String.format("chunk ind = %d, trap value = %f", chunkIdx, trapValue));
 					}
 				}
@@ -86,6 +92,11 @@ public class LightningManipulator extends AbstractManipulator {
 		}
 
 		return Optional.empty();
+	}
+
+	@Override
+	protected String getRegionSeparator(int newX, int newZ) {
+		return "------ REGION (" + newX + ", " + newZ + ") ------";
 	}
 
 }

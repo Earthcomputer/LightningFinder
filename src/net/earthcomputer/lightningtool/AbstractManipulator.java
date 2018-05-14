@@ -24,6 +24,8 @@ public abstract class AbstractManipulator {
 
 	protected Random rand = new Random();
 
+	private long lastProgressBarUpdateTime = System.nanoTime();
+
 	public void startSearch(MainFrame frame) {
 		this.frame = frame;
 
@@ -59,12 +61,14 @@ public abstract class AbstractManipulator {
 			return;
 		}
 
-		frame.getLblOutput().setForeground(Color.BLACK);
-		frame.getLblOutput().setText("Output appears here");
-		frame.getOutputTextArea().setText("");
-		frame.getProgressBar().setIndeterminate(true);
-		frame.getProgressBar().setString("");
-		frame.getProgressBar().setStringPainted(true);
+		SwingUtilities.invokeLater(() -> {
+			frame.getLblOutput().setForeground(Color.BLACK);
+			frame.getLblOutput().setText("Output appears here");
+			frame.getOutputTextArea().setText("");
+			frame.getProgressBar().setIndeterminate(true);
+			frame.getProgressBar().setString("");
+			frame.getProgressBar().setStringPainted(true);
+		});
 		searching = true;
 		thread = new Thread(this::doSearch);
 		thread.setName("Searching Worker Thread " + (nextWorkerThread++));
@@ -99,21 +103,34 @@ public abstract class AbstractManipulator {
 	}
 
 	private void searchRegion(int x, int z, int count) {
+		boolean hadOutput = false;
 		for (extraRandCalls = 0; extraRandCalls <= maxExtraRandCalls && searching; extraRandCalls++) {
 			resetSeed(x, z);
 			Optional<String> result = testRegion(x, z);
 			if (result.isPresent()) {
+				String separator = hadOutput ? null : getRegionSeparator(x, z);
+				if (separator == null)
+					separator = "";
+				else
+					separator += "\n";
+				final String separator_f = separator;
+				hadOutput = true;
 				String output = String.format("(%d, %d) d = %d, extra rand = %d; %s", x * 80 * 16, z * 80 * 16,
 						Math.abs((fromX - x) * 80 * 16) + Math.abs((fromZ - z) * 80 * 16), extraRandCalls,
 						result.get());
 				SwingUtilities.invokeLater(() -> {
 					frame.getLblOutput().setForeground(Color.BLACK);
 					frame.getLblOutput().setText(output);
-					frame.getOutputTextArea().append(output + "\n");
+					frame.getOutputTextArea().append(separator_f + output + "\n");
 				});
 			}
 		}
-		SwingUtilities.invokeLater(() -> frame.getProgressBar().setString(count + " regions searched"));
+
+		long currentTime = System.nanoTime();
+		if (currentTime - lastProgressBarUpdateTime > 100_000_000) {
+			lastProgressBarUpdateTime = currentTime;
+			SwingUtilities.invokeLater(() -> frame.getProgressBar().setString(count + " regions searched"));
+		}
 	}
 
 	public static void resetSeed(Random rand, int x, int z, long worldSeed) {
@@ -130,10 +147,16 @@ public abstract class AbstractManipulator {
 
 	protected abstract Optional<String> testRegion(int x, int z);
 
+	protected String getRegionSeparator(int newX, int newZ) {
+		return null;
+	}
+
 	public void stop() {
 		searching = false;
-		frame.getProgressBar().setIndeterminate(false);
-		frame.getProgressBar().setStringPainted(false);
+		SwingUtilities.invokeLater(() -> {
+			frame.getProgressBar().setIndeterminate(false);
+			frame.getProgressBar().setStringPainted(false);
+		});
 	}
 
 	protected void setErrorMessage(String message) {
