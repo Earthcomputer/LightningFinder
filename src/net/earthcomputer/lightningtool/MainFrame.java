@@ -100,6 +100,9 @@ public class MainFrame extends JFrame {
 	private JCheckBox chckbxXpExact;
 	private JTextField fortuneLevelTextField;
 	private JComboBox advancerComboBox;
+	private JTextField ironViewDistanceTextField;
+	private JTextField playerXInChunkTextField;
+	private JTextField playerZInChunkTextField;
 
 	/**
 	 * Launch the application.
@@ -812,6 +815,69 @@ public class MainFrame extends JFrame {
 		((DefaultTableModel) mobChunksTable.getModel()).removeRow(0);
 		scrollPane_1.setViewportView(mobChunksTable);
 
+		JPanel ironTab = new JPanel();
+		tabbedPane.addTab("Iron", null, ironTab, null);
+		ironTab.setLayout(new BoxLayout(ironTab, BoxLayout.Y_AXIS));
+
+		JPanel panel_27 = new JPanel();
+		FlowLayout flowLayout_17 = (FlowLayout) panel_27.getLayout();
+		flowLayout_17.setAlignment(FlowLayout.LEFT);
+		ironTab.add(panel_27);
+
+		JLabel lblViewDistance_1 = new JLabel("View distance:");
+		panel_27.add(lblViewDistance_1);
+
+		ironViewDistanceTextField = new JTextField();
+		ironViewDistanceTextField.setText("12");
+		panel_27.add(ironViewDistanceTextField);
+		ironViewDistanceTextField.setColumns(10);
+
+		JPanel panel_28 = new JPanel();
+		FlowLayout flowLayout_18 = (FlowLayout) panel_28.getLayout();
+		flowLayout_18.setAlignment(FlowLayout.LEFT);
+		ironTab.add(panel_28);
+
+		JLabel lblPlayerPosIn = new JLabel("Player pos in chunk:");
+		panel_28.add(lblPlayerPosIn);
+
+		Component horizontalStrut_3 = Box.createHorizontalStrut(20);
+		panel_28.add(horizontalStrut_3);
+
+		JLabel lblX_1 = new JLabel("X:");
+		panel_28.add(lblX_1);
+
+		playerXInChunkTextField = new JTextField();
+		playerXInChunkTextField.setText("8");
+		panel_28.add(playerXInChunkTextField);
+		playerXInChunkTextField.setColumns(10);
+
+		Component horizontalStrut_4 = Box.createHorizontalStrut(20);
+		panel_28.add(horizontalStrut_4);
+
+		JLabel lblZ = new JLabel("Z:");
+		panel_28.add(lblZ);
+
+		playerZInChunkTextField = new JTextField();
+		playerZInChunkTextField.setText("8");
+		panel_28.add(playerZInChunkTextField);
+		playerZInChunkTextField.setColumns(10);
+
+		JPanel panel_23 = new JPanel();
+		FlowLayout flowLayout_16 = (FlowLayout) panel_23.getLayout();
+		flowLayout_16.setAlignment(FlowLayout.LEFT);
+		ironTab.add(panel_23);
+
+		JButton btnCalculate_2 = new JButton("Calculate");
+		btnCalculate_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (manipulator != null)
+					manipulator.stop();
+				manipulator = new IronManipulator();
+				manipulator.startSearch(MainFrame.this);
+			}
+		});
+		panel_23.add(btnCalculate_2);
+
 		JPanel fortuneTab = new JPanel();
 		tabbedPane.addTab("Fortune", null, fortuneTab, null);
 		fortuneTab.setLayout(new BoxLayout(fortuneTab, BoxLayout.Y_AXIS));
@@ -930,11 +996,12 @@ public class MainFrame extends JFrame {
 		txtrAbout.setWrapStyleWord(true);
 		txtrAbout.setLineWrap(true);
 		txtrAbout.setText(
-				"Lightning machine tool by Earthcomputer\r\n(original tool by Xcom)\r\n\r\nLightning concept inspired by Amiga IZI\r\nLightning research by Earthcomputer, Xcom, 2No2Name, EDDxample, 0x53ee71ebe11e\r\n\r\nWeather research by Earthcomputer, 0x53ee71ebe11e, EDDxample, and independently by Xcom, 2No2Name\r\n\r\nMob spawning research by Xcom, 2No2Name, Earthcomputer\r\n\r\nLightning farm design by EDDxample, 0x53ee71ebe11e\r\nThanks to SciCraft for giving helpful pointers for various components");
+				"Lightning machine tool by Earthcomputer\r\n(original tool by Xcom)\r\n\r\nLightning concept inspired by Amiga IZI\r\nLightning research by Earthcomputer, Xcom, 2No2Name, EDDxample, 0x53ee71ebe11e\r\n\r\nWeather research by Earthcomputer, 0x53ee71ebe11e, EDDxample, and independently by Xcom, 2No2Name\r\n\r\nMob spawning research by Xcom, 2No2Name, Earthcomputer\r\n\r\nFirst RNG manipulation iron farm by EDDxample\r\n\r\nLightning farm design by EDDxample, 0x53ee71ebe11e\r\nThanks to SciCraft for giving helpful pointers for various components");
 		txtrAbout.setFont(UIManager.getFont("Label.font"));
 		txtrAbout.setForeground(UIManager.getColor("Label.foreground"));
 		txtrAbout.setBackground(UIManager.getColor("Label.background"));
 		txtrAbout.setEditable(false);
+		txtrAbout.setCaretPosition(0);
 		aboutTab.setViewportView(txtrAbout);
 
 		JScrollPane scrollPane = new JScrollPane();
@@ -1119,5 +1186,17 @@ public class MainFrame extends JFrame {
 
 	public JComboBox getAdvancerComboBox() {
 		return advancerComboBox;
+	}
+
+	public JTextField getIronViewDistanceTextField() {
+		return ironViewDistanceTextField;
+	}
+
+	public JTextField getPlayerXInChunkTextField() {
+		return playerXInChunkTextField;
+	}
+
+	public JTextField getPlayerZInChunkTextField() {
+		return playerZInChunkTextField;
 	}
 }
