@@ -115,7 +115,8 @@ public abstract class AbstractManipulator {
 					separator += "\n";
 				final String separator_f = separator;
 				hadOutput = true;
-				String output = String.format("(%d, %d) d = %d, extra rand = %d; %s", x * 80 * 16, z * 80 * 16,
+				String output = String.format("(%d, %d) to (%d, %d) d = %d, extra rand = %d; %s", x * 80 * 16 - 128,
+						z * 80 * 16 - 128, (x + 1) * 80 * 16 - 128 - 1, (z + 1) * 80 * 16 - 128 - 1,
 						Math.abs((fromX - x) * 80 * 16) + Math.abs((fromZ - z) * 80 * 16), extraRandCalls,
 						result.get());
 				SwingUtilities.invokeLater(() -> {
