@@ -3,7 +3,7 @@ package net.earthcomputer.lightningtool;
 import java.util.Optional;
 
 public class WeatherManipulator extends AbstractManipulator {
-	
+
 	public static final int THUNDER_OFF_RANGE = 168000;
 	public static final int THUNDER_ON_RANGE = 12000;
 	public static final int RAIN_OFF_RANGE = 168000;
@@ -25,6 +25,8 @@ public class WeatherManipulator extends AbstractManipulator {
 	private int targetRainTime;
 	private int minTotalErrorRain = Integer.MAX_VALUE;
 	private int minTotalErrorThunder = Integer.MAX_VALUE;
+
+	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.HOPPER };
 
 	@Override
 	protected boolean parseExtra() {

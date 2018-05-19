@@ -7,12 +7,8 @@ public class LightningManipulator extends AbstractManipulator {
 
 	private DoublePredicate trapValuePredicate;
 	private int chunkCount;
-	private int wantedChunkIteration;
-	private boolean exact;
 
-	private int bestChunkIdx = Integer.MAX_VALUE;
-	private int curRegionX = Integer.MAX_VALUE;
-	private int curRegionZ = Integer.MAX_VALUE;
+	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.DISPENSER, RNGAdvancer.LAVA_LIGHTNING };
 
 	@Override
 	protected boolean parseExtra() {
@@ -25,38 +21,43 @@ public class LightningManipulator extends AbstractManipulator {
 		}
 
 		int viewDistance;
-		try {
-			viewDistance = Integer.parseInt(frame.getViewDistanceTextField().getText());
-			if (viewDistance > 32 || viewDistance < 1) {
-				throw new NumberFormatException();
-			}
-		} catch (NumberFormatException e) {
-			setErrorMessage("Invalid view distance");
-			return false;
+		double playerX, playerZ;
+		if (advancerParameterHandler instanceof RNGAdvancer.IViewDistanceParameterHandler) {
+			RNGAdvancer.IViewDistanceParameterHandler viewDistanceHandler = (RNGAdvancer.IViewDistanceParameterHandler) advancerParameterHandler;
+			viewDistance = viewDistanceHandler.getViewDistance();
+			playerX = viewDistanceHandler.getPlayerXInChunk();
+			playerZ = viewDistanceHandler.getPlayerZInChunk();
+		} else {
+			viewDistance = 12;
+			playerX = 8;
+			playerZ = 8;
 		}
 
 		chunkCount = 0;
-		for (int dx = -viewDistance; dx <= viewDistance; dx++) {
-			for (int dz = -viewDistance; dz <= viewDistance; dz++) {
-				if (dx * dx + dz * dz <= 8 * 8) {
+		for (int x = -viewDistance; x <= viewDistance; x++) {
+			for (int z = -viewDistance; z <= viewDistance; z++) {
+				double dx = (x * 16 + 8) - playerX;
+				double dz = (z * 16 + 8) - playerZ;
+				if (dx * dx + dz * dz <= 128 * 128) {
 					chunkCount++;
 				}
 			}
 		}
 
-		try {
-			wantedChunkIteration = Integer.parseInt(frame.getWantedChunkIterationTextField().getText());
-			if (wantedChunkIteration < 0 || wantedChunkIteration >= chunkCount) {
-				throw new NumberFormatException();
-			}
-		} catch (NumberFormatException e) {
-			setErrorMessage("Invalid wanted chunk iteration");
-			return false;
-		}
-
-		exact = frame.getChckbxExact().isSelected();
-
 		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected <P extends RNGAdvancer.ParameterHandler> Optional<String> testRegionWithAdvancer(int x, int z) {
+		for (int i = 0; i < 4; i++)
+			rand.nextInt();
+
+		if (advancer instanceof RNGAdvancer.IPlayerChunkMapAware) {
+			return ((RNGAdvancer<P>) advancer).search(rand, (P) advancerParameterHandler, rand -> testForLightning());
+		} else {
+			return super.testRegionWithAdvancer(x, z);
+		}
 	}
 
 	@Override
@@ -65,32 +66,24 @@ public class LightningManipulator extends AbstractManipulator {
 			rand.nextInt();
 
 		for (int chunkIdx = 0; chunkIdx < chunkCount; chunkIdx++) {
-			int lightningValue = rand.nextInt(100000);
-			if (lightningValue == 0) {
-				double trapValue = rand.nextDouble();
-				if (trapValuePredicate.test(trapValue)) {
-					boolean isWanted = false;
-					if (exact) {
-						isWanted = chunkIdx == wantedChunkIteration;
-					} else {
-						isWanted = chunkIdx < bestChunkIdx;
-					}
-
-					if (isWanted) {
-						if (x != curRegionX || z != curRegionZ) {
-							curRegionX = x;
-							curRegionZ = z;
-							bestChunkIdx = chunkIdx;
-							if (chunkIdx <= wantedChunkIteration)
-								stop();
-						}
-						return Optional.of(String.format("chunk ind = %d, trap value = %f", chunkIdx, trapValue));
-					}
-				}
+			Optional<String> result = testForLightning();
+			if (result.isPresent()) {
+				return Optional.of(result.get() + ", chunkIdx = " + chunkIdx);
 			}
 			rand.nextInt();
 		}
 
+		return Optional.empty();
+	}
+
+	private Optional<String> testForLightning() {
+		int lightningValue = rand.nextInt(100000);
+		if (lightningValue == 0) {
+			double trapValue = rand.nextDouble();
+			if (trapValuePredicate.test(trapValue)) {
+				return Optional.of(String.format("trap value = %f", trapValue));
+			}
+		}
 		return Optional.empty();
 	}
 

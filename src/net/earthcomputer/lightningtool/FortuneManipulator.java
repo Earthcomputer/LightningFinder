@@ -16,6 +16,8 @@ public class FortuneManipulator extends AbstractManipulator {
 	private int bestQuantityDropped = -1;
 	private int bestXpDropped = -1;
 
+	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.HOPPER };
+
 	@Override
 	protected boolean parseExtra() {
 		ore = (Ore) frame.getOreComboBox().getSelectedItem();

@@ -6,29 +6,21 @@ public class IronManipulator extends AbstractManipulator {
 
 	private int playerChunks;
 
+	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.DISPENSER, RNGAdvancer.LAVA };
+
 	@Override
 	protected boolean parseExtra() {
 		int viewDistance;
-		try {
-			viewDistance = Integer.parseInt(frame.getIronViewDistanceTextField().getText());
-			if (viewDistance < 2 || viewDistance > 32)
-				throw new NumberFormatException();
-		} catch (NumberFormatException e) {
-			setErrorMessage("View distance invalid");
-			return false;
-		}
-
 		double playerX, playerZ;
-		try {
-			playerX = Double.parseDouble(frame.getPlayerXInChunkTextField().getText());
-			if (playerX < 0 || playerX >= 16)
-				throw new NumberFormatException();
-			playerZ = Double.parseDouble(frame.getPlayerZInChunkTextField().getText());
-			if (playerZ < 0 || playerZ >= 16)
-				throw new NumberFormatException();
-		} catch (NumberFormatException e) {
-			setErrorMessage("Player pos in chunk invalid");
-			return false;
+		if (advancerParameterHandler instanceof RNGAdvancer.IViewDistanceParameterHandler) {
+			RNGAdvancer.IViewDistanceParameterHandler viewDistanceHandler = (RNGAdvancer.IViewDistanceParameterHandler) advancerParameterHandler;
+			viewDistance = viewDistanceHandler.getViewDistance();
+			playerX = viewDistanceHandler.getPlayerXInChunk();
+			playerZ = viewDistanceHandler.getPlayerZInChunk();
+		} else {
+			viewDistance = 12;
+			playerX = 8;
+			playerZ = 8;
 		}
 
 		playerChunks = 0;
@@ -44,6 +36,19 @@ public class IronManipulator extends AbstractManipulator {
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	protected <P extends RNGAdvancer.ParameterHandler> Optional<String> testRegionWithAdvancer(int x, int z) {
+		for (int i = 0; i < 4; i++)
+			rand.nextInt();
+
+		if (advancer instanceof RNGAdvancer.IPlayerChunkMapAware) {
+			return ((RNGAdvancer<P>) advancer).search(rand, (P) advancerParameterHandler, rand -> testIronGolem());
+		} else {
+			return super.testRegionWithAdvancer(x, z);
+		}
+	}
+
 	@Override
 	protected Optional<String> testRegion(int x, int z) {
 		for (int i = 0; i < 4; i++)
@@ -52,6 +57,10 @@ public class IronManipulator extends AbstractManipulator {
 		for (int i = 0; i < playerChunks; i++)
 			rand.nextInt();
 
+		return testIronGolem();
+	}
+
+	private Optional<String> testIronGolem() {
 		rand.nextInt(50);
 
 		if (rand.nextInt(7000) == 0) {

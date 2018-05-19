@@ -16,13 +16,12 @@ public abstract class AbstractManipulator {
 
 	protected long worldSeed;
 	protected int fromX, fromZ;
-	protected int maxExtraRandCalls;
 	protected volatile boolean searching;
 
-	protected int extraRandCalls;
-	protected RNGAdvancer advancer;
+	protected RNGAdvancer<?> advancer;
+	protected RNGAdvancer.ParameterHandler advancerParameterHandler;
 
-	protected Random rand = new Random();
+	protected ResettableRandom rand = new ResettableRandom();
 
 	private long lastProgressBarUpdateTime = System.nanoTime();
 
@@ -46,16 +45,14 @@ public abstract class AbstractManipulator {
 		fromX /= 80 * 16;
 		fromZ /= 80 * 16;
 
-		try {
-			maxExtraRandCalls = Integer.parseInt(frame.getExtraRandCallsTextField().getText());
-			if (maxExtraRandCalls < 0 || maxExtraRandCalls >= 65536) {
-				throw new NumberFormatException();
+		advancer = (RNGAdvancer<?>) frame.getAdvancerComboBox().getSelectedItem();
+		if (advancer != null) {
+			advancerParameterHandler = frame.getRNGAdvancerParameterHandler();
+			if (!advancerParameterHandler.readFromPanel()) {
+				setErrorMessage("Invalid advancer parameters");
+				return;
 			}
-		} catch (NumberFormatException e) {
-			setErrorMessage("Invalid extra rand calls");
-			return;
 		}
-		advancer = (RNGAdvancer) frame.getAdvancerComboBox().getSelectedItem();
 
 		if (!parseExtra()) {
 			return;
@@ -104,27 +101,24 @@ public abstract class AbstractManipulator {
 
 	private void searchRegion(int x, int z, int count) {
 		boolean hadOutput = false;
-		for (extraRandCalls = 0; extraRandCalls <= maxExtraRandCalls && searching; extraRandCalls++) {
-			resetSeed(x, z);
-			Optional<String> result = testRegion(x, z);
-			if (result.isPresent()) {
-				String separator = hadOutput ? null : getRegionSeparator(x, z);
-				if (separator == null)
-					separator = "";
-				else
-					separator += "\n";
-				final String separator_f = separator;
-				hadOutput = true;
-				String output = String.format("(%d, %d) to (%d, %d) d = %d, extra rand = %d; %s", x * 80 * 16 - 128,
-						z * 80 * 16 - 128, (x + 1) * 80 * 16 - 128 - 1, (z + 1) * 80 * 16 - 128 - 1,
-						Math.abs((fromX - x) * 80 * 16) + Math.abs((fromZ - z) * 80 * 16), extraRandCalls,
-						result.get());
-				SwingUtilities.invokeLater(() -> {
-					frame.getLblOutput().setForeground(Color.BLACK);
-					frame.getLblOutput().setText(output);
-					frame.getOutputTextArea().append(separator_f + output + "\n");
-				});
-			}
+		resetSeed(rand, x, z, worldSeed);
+		Optional<String> result = testRegionWithAdvancer(x, z);
+		if (result.isPresent()) {
+			String separator = hadOutput ? null : getRegionSeparator(x, z);
+			if (separator == null)
+				separator = "";
+			else
+				separator += "\n";
+			final String separator_f = separator;
+			hadOutput = true;
+			String output = String.format("(%d, %d) to (%d, %d) d = %d; %s", x * 80 * 16 - 128, z * 80 * 16 - 128,
+					(x + 1) * 80 * 16 - 128 - 1, (z + 1) * 80 * 16 - 128 - 1,
+					Math.abs((fromX - x) * 80 * 16) + Math.abs((fromZ - z) * 80 * 16), result.get());
+			SwingUtilities.invokeLater(() -> {
+				frame.getLblOutput().setForeground(Color.BLACK);
+				frame.getLblOutput().setText(output);
+				frame.getOutputTextArea().append(separator_f + output + "\n");
+			});
 		}
 
 		long currentTime = System.nanoTime();
@@ -140,10 +134,10 @@ public abstract class AbstractManipulator {
 			rand.nextInt();
 	}
 
-	protected void resetSeed(int x, int z) {
-		resetSeed(rand, x, z, worldSeed);
-		for (int i = 0; i < extraRandCalls; i++)
-			advancer.advance(rand);
+	@SuppressWarnings("unchecked")
+	protected <P extends RNGAdvancer.ParameterHandler> Optional<String> testRegionWithAdvancer(int x, int z) {
+		RNGAdvancer<P> advancer = (RNGAdvancer<P>) this.advancer;
+		return advancer.search(rand, (P) advancerParameterHandler, rand -> testRegion(x, z));
 	}
 
 	protected abstract Optional<String> testRegion(int x, int z);

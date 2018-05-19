@@ -36,6 +36,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
@@ -63,10 +64,6 @@ public class MainFrame extends JFrame {
 	private JRadioButton rdbtnHorseTraps;
 	private JTextField worldSeedTextField;
 	private JLabel lblOutput;
-	private JTextField viewDistanceTextField;
-	private JTextField wantedChunkIterationTextField;
-	private JCheckBox chckbxExact;
-	private JTextField extraRandCallsTextField;
 	private JPanel thunderOptionsPanel;
 	private JPanel rainOptionsPanel;
 	private JTextField thunderTimeTextField;
@@ -100,9 +97,16 @@ public class MainFrame extends JFrame {
 	private JCheckBox chckbxXpExact;
 	private JTextField fortuneLevelTextField;
 	private JComboBox advancerComboBox;
-	private JTextField ironViewDistanceTextField;
-	private JTextField playerXInChunkTextField;
-	private JTextField playerZInChunkTextField;
+	private JPanel advancerParametersPanel;
+	private RNGAdvancer.ParameterHandler rngAdvancerParameterHandler;
+	private JPanel lightningTab;
+	private JPanel weatherTab;
+	private JPanel schedulerTab;
+	private JPanel mobSpawningTab;
+	private JPanel ironTab;
+	private JPanel fortuneTab;
+	private JPanel outputTab;
+	private JScrollPane aboutTab;
 
 	/**
 	 * Launch the application.
@@ -127,7 +131,7 @@ public class MainFrame extends JFrame {
 		setResizable(false);
 		setTitle("Lightning Machine Tool");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 540, 424);
+		setBounds(100, 100, 720, 540);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
@@ -138,6 +142,8 @@ public class MainFrame extends JFrame {
 		panel_2.setLayout(new BoxLayout(panel_2, BoxLayout.Y_AXIS));
 
 		JPanel panel_3 = new JPanel();
+		FlowLayout flowLayout_19 = (FlowLayout) panel_3.getLayout();
+		flowLayout_19.setAlignment(FlowLayout.LEFT);
 		panel_2.add(panel_3);
 
 		JLabel lblSeed = new JLabel("World Gen Seed:");
@@ -163,6 +169,8 @@ public class MainFrame extends JFrame {
 		});
 
 		JPanel panel_1 = new JPanel();
+		FlowLayout flowLayout_20 = (FlowLayout) panel_1.getLayout();
+		flowLayout_20.setAlignment(FlowLayout.LEFT);
 		panel_2.add(panel_1);
 
 		JLabel lblSearchFrom = new JLabel("Search from:");
@@ -221,28 +229,49 @@ public class MainFrame extends JFrame {
 		});
 
 		JPanel panel_8 = new JPanel();
+		FlowLayout flowLayout_21 = (FlowLayout) panel_8.getLayout();
+		flowLayout_21.setAlignment(FlowLayout.LEFT);
 		panel_2.add(panel_8);
-
-		JLabel lblMaxExtraRand = new JLabel("Max extra rand calls:");
-		panel_8.add(lblMaxExtraRand);
-
-		extraRandCallsTextField = new JTextField();
-		extraRandCallsTextField.setText("0");
-		panel_8.add(extraRandCallsTextField);
-		extraRandCallsTextField.setColumns(10);
 
 		JLabel lblAdvancer = new JLabel("Advancer:");
 		panel_8.add(lblAdvancer);
 
 		advancerComboBox = new JComboBox();
-		advancerComboBox.setModel(new DefaultComboBoxModel(RNGAdvancer.values()));
+		advancerComboBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				reloadAdvancer();
+			}
+		});
 		panel_8.add(advancerComboBox);
 
-		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		contentPane.add(tabbedPane, BorderLayout.CENTER);
+		advancerParametersPanel = new JPanel();
+		FlowLayout flowLayout_22 = (FlowLayout) advancerParametersPanel.getLayout();
+		flowLayout_22.setAlignment(FlowLayout.LEFT);
+		panel_2.add(advancerParametersPanel);
 
-		JPanel lightningTab = new JPanel();
-		tabbedPane.addTab("Lightning", null, lightningTab, null);
+		JTabbedPane mainTabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		mainTabbedPane.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				Component selected = mainTabbedPane.getSelectedComponent();
+				if (selected == lightningTab) {
+					loadAdvancers(LightningManipulator.ADVANCERS);
+				} else if (selected == weatherTab) {
+					loadAdvancers(WeatherManipulator.ADVANCERS);
+				} else if (selected == mobSpawningTab) {
+					loadAdvancers(MobSpawnCalculator.ADVANCERS);
+				} else if (selected == ironTab) {
+					loadAdvancers(IronManipulator.ADVANCERS);
+				} else if (selected == fortuneTab) {
+					loadAdvancers(FortuneManipulator.ADVANCERS);
+				} else {
+					loadAdvancers();
+				}
+			}
+		});
+		contentPane.add(mainTabbedPane, BorderLayout.CENTER);
+
+		lightningTab = new JPanel();
+		mainTabbedPane.addTab("Lightning", null, lightningTab, null);
 		lightningTab.setLayout(new BoxLayout(lightningTab, BoxLayout.Y_AXIS));
 
 		rdbtnHorseTraps = new JRadioButton("Horse traps");
@@ -258,21 +287,6 @@ public class MainFrame extends JFrame {
 		buttonGroup.add(rdbtnDependOnMoon);
 		lightningTab.add(rdbtnDependOnMoon);
 
-		JPanel panel_6 = new JPanel();
-		FlowLayout flowLayout = (FlowLayout) panel_6.getLayout();
-		flowLayout.setAlignment(FlowLayout.LEFT);
-		flowLayout.setAlignOnBaseline(true);
-		panel_6.setAlignmentX(Component.LEFT_ALIGNMENT);
-		lightningTab.add(panel_6);
-
-		JLabel lblViewDistance = new JLabel("View distance:");
-		panel_6.add(lblViewDistance);
-
-		viewDistanceTextField = new JTextField();
-		viewDistanceTextField.setText("12");
-		panel_6.add(viewDistanceTextField);
-		viewDistanceTextField.setColumns(10);
-
 		JButton btnSearch = new JButton("Search");
 		btnSearch.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -282,27 +296,10 @@ public class MainFrame extends JFrame {
 				manipulator.startSearch(MainFrame.this);
 			}
 		});
-
-		JPanel panel_7 = new JPanel();
-		FlowLayout flowLayout_1 = (FlowLayout) panel_7.getLayout();
-		flowLayout_1.setAlignment(FlowLayout.LEFT);
-		panel_7.setAlignmentX(0.0f);
-		lightningTab.add(panel_7);
-
-		JLabel lblWantedChunkIteration = new JLabel("Wanted chunk iteration:");
-		panel_7.add(lblWantedChunkIteration);
-
-		wantedChunkIterationTextField = new JTextField();
-		wantedChunkIterationTextField.setText("0");
-		wantedChunkIterationTextField.setColumns(10);
-		panel_7.add(wantedChunkIterationTextField);
-
-		chckbxExact = new JCheckBox("Exact");
-		panel_7.add(chckbxExact);
 		lightningTab.add(btnSearch);
 
-		JPanel weatherTab = new JPanel();
-		tabbedPane.addTab("Weather", null, weatherTab, null);
+		weatherTab = new JPanel();
+		mainTabbedPane.addTab("Weather", null, weatherTab, null);
 		weatherTab.setLayout(new BoxLayout(weatherTab, BoxLayout.Y_AXIS));
 
 		chckbxManipulateThunder = new JCheckBox("Manipulate Thunder");
@@ -414,8 +411,8 @@ public class MainFrame extends JFrame {
 		setEnabled(thunderOptionsPanel, false);
 		setEnabled(rainOptionsPanel, false);
 
-		JPanel schedulerTab = new JPanel();
-		tabbedPane.addTab("Scheduler", null, schedulerTab, null);
+		schedulerTab = new JPanel();
+		mainTabbedPane.addTab("Scheduler", null, schedulerTab, null);
 		schedulerTab.setLayout(new BoxLayout(schedulerTab, BoxLayout.Y_AXIS));
 
 		JPanel panel_13 = new JPanel();
@@ -510,8 +507,8 @@ public class MainFrame extends JFrame {
 		});
 		panel_18.add(btnCalculate);
 
-		JPanel mobSpawningTab = new JPanel();
-		tabbedPane.addTab("Mobs", null, mobSpawningTab, null);
+		mobSpawningTab = new JPanel();
+		mainTabbedPane.addTab("Mobs", null, mobSpawningTab, null);
 		mobSpawningTab.setLayout(new BoxLayout(mobSpawningTab, BoxLayout.X_AXIS));
 
 		JTabbedPane tabbedPane_1 = new JTabbedPane(JTabbedPane.TOP);
@@ -815,52 +812,9 @@ public class MainFrame extends JFrame {
 		((DefaultTableModel) mobChunksTable.getModel()).removeRow(0);
 		scrollPane_1.setViewportView(mobChunksTable);
 
-		JPanel ironTab = new JPanel();
-		tabbedPane.addTab("Iron", null, ironTab, null);
+		ironTab = new JPanel();
+		mainTabbedPane.addTab("Iron", null, ironTab, null);
 		ironTab.setLayout(new BoxLayout(ironTab, BoxLayout.Y_AXIS));
-
-		JPanel panel_27 = new JPanel();
-		FlowLayout flowLayout_17 = (FlowLayout) panel_27.getLayout();
-		flowLayout_17.setAlignment(FlowLayout.LEFT);
-		ironTab.add(panel_27);
-
-		JLabel lblViewDistance_1 = new JLabel("View distance:");
-		panel_27.add(lblViewDistance_1);
-
-		ironViewDistanceTextField = new JTextField();
-		ironViewDistanceTextField.setText("12");
-		panel_27.add(ironViewDistanceTextField);
-		ironViewDistanceTextField.setColumns(10);
-
-		JPanel panel_28 = new JPanel();
-		FlowLayout flowLayout_18 = (FlowLayout) panel_28.getLayout();
-		flowLayout_18.setAlignment(FlowLayout.LEFT);
-		ironTab.add(panel_28);
-
-		JLabel lblPlayerPosIn = new JLabel("Player pos in chunk:");
-		panel_28.add(lblPlayerPosIn);
-
-		Component horizontalStrut_3 = Box.createHorizontalStrut(20);
-		panel_28.add(horizontalStrut_3);
-
-		JLabel lblX_1 = new JLabel("X:");
-		panel_28.add(lblX_1);
-
-		playerXInChunkTextField = new JTextField();
-		playerXInChunkTextField.setText("8");
-		panel_28.add(playerXInChunkTextField);
-		playerXInChunkTextField.setColumns(10);
-
-		Component horizontalStrut_4 = Box.createHorizontalStrut(20);
-		panel_28.add(horizontalStrut_4);
-
-		JLabel lblZ = new JLabel("Z:");
-		panel_28.add(lblZ);
-
-		playerZInChunkTextField = new JTextField();
-		playerZInChunkTextField.setText("8");
-		panel_28.add(playerZInChunkTextField);
-		playerZInChunkTextField.setColumns(10);
 
 		JPanel panel_23 = new JPanel();
 		FlowLayout flowLayout_16 = (FlowLayout) panel_23.getLayout();
@@ -878,8 +832,8 @@ public class MainFrame extends JFrame {
 		});
 		panel_23.add(btnCalculate_2);
 
-		JPanel fortuneTab = new JPanel();
-		tabbedPane.addTab("Fortune", null, fortuneTab, null);
+		fortuneTab = new JPanel();
+		mainTabbedPane.addTab("Fortune", null, fortuneTab, null);
 		fortuneTab.setLayout(new BoxLayout(fortuneTab, BoxLayout.Y_AXIS));
 
 		JPanel panel = new JPanel();
@@ -984,12 +938,12 @@ public class MainFrame extends JFrame {
 		});
 		panel_19.add(btnCalculate_1);
 
-		JPanel outputTab = new JPanel();
-		tabbedPane.addTab("Output", null, outputTab, null);
+		outputTab = new JPanel();
+		mainTabbedPane.addTab("Output", null, outputTab, null);
 		outputTab.setLayout(new BoxLayout(outputTab, BoxLayout.X_AXIS));
 
-		JScrollPane aboutTab = new JScrollPane();
-		tabbedPane.addTab("About", null, aboutTab, null);
+		aboutTab = new JScrollPane();
+		mainTabbedPane.addTab("About", null, aboutTab, null);
 
 		JTextArea txtrAbout = new JTextArea();
 		txtrAbout.setFocusable(false);
@@ -1005,7 +959,6 @@ public class MainFrame extends JFrame {
 		aboutTab.setViewportView(txtrAbout);
 
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		outputTab.add(scrollPane);
 
 		outputTextArea = new JTextArea();
@@ -1025,6 +978,39 @@ public class MainFrame extends JFrame {
 			} else {
 				child.setEnabled(enabled);
 			}
+		}
+	}
+
+	public void reloadAdvancer() {
+		RNGAdvancer advancer = (RNGAdvancer) advancerComboBox.getSelectedItem();
+		advancerParametersPanel.removeAll();
+		if (advancer == null) {
+			this.rngAdvancerParameterHandler = null;
+		} else {
+			RNGAdvancer.ParameterHandler parameterHandler = advancer.createParameterHandler();
+			advancerParametersPanel.add(parameterHandler.createPanel());
+			this.rngAdvancerParameterHandler = parameterHandler;
+		}
+		revalidate();
+	}
+
+	public void loadAdvancers(RNGAdvancer... advancers) {
+		RNGAdvancer currentAdvancer = (RNGAdvancer) advancerComboBox.getSelectedItem();
+		advancerComboBox.removeAllItems();
+		boolean found = false;
+		for (int i = 0; i < advancers.length; i++) {
+			advancerComboBox.addItem(advancers[i]);
+			if (currentAdvancer != null && advancers[i].getName().equals(currentAdvancer.getName())) {
+				advancerComboBox.setSelectedIndex(i);
+				found = true;
+			}
+		}
+		if (!found) {
+			if (advancerComboBox.getItemCount() > 0)
+				advancerComboBox.setSelectedIndex(0);
+		}
+		if (advancerComboBox.getSelectedItem() != currentAdvancer) {
+			reloadAdvancer();
 		}
 	}
 
@@ -1048,10 +1034,6 @@ public class MainFrame extends JFrame {
 		return progressBar;
 	}
 
-	public JTextField getViewDistanceTextField() {
-		return viewDistanceTextField;
-	}
-
 	public JRadioButton getRdbtnHorseTraps() {
 		return rdbtnHorseTraps;
 	}
@@ -1062,18 +1044,6 @@ public class MainFrame extends JFrame {
 
 	public JRadioButton getRdbtnDependOnMoon() {
 		return rdbtnDependOnMoon;
-	}
-
-	public JTextField getWantedChunkIterationTextField() {
-		return wantedChunkIterationTextField;
-	}
-
-	public JCheckBox getChckbxExact() {
-		return chckbxExact;
-	}
-
-	public JTextField getExtraRandCallsTextField() {
-		return extraRandCallsTextField;
 	}
 
 	public JCheckBox getChckbxManipulateThunder() {
@@ -1188,15 +1158,12 @@ public class MainFrame extends JFrame {
 		return advancerComboBox;
 	}
 
-	public JTextField getIronViewDistanceTextField() {
-		return ironViewDistanceTextField;
+	public JPanel getAdvancerParametersPanel() {
+		return advancerParametersPanel;
 	}
 
-	public JTextField getPlayerXInChunkTextField() {
-		return playerXInChunkTextField;
+	public RNGAdvancer.ParameterHandler getRNGAdvancerParameterHandler() {
+		return rngAdvancerParameterHandler;
 	}
 
-	public JTextField getPlayerZInChunkTextField() {
-		return playerZInChunkTextField;
-	}
 }
