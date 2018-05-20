@@ -1,13 +1,17 @@
 package net.earthcomputer.lightningtool;
 
 import java.awt.FlowLayout;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+
+import net.earthcomputer.lightningtool.SearchResult.Property;
 
 /**
  * Describes a method to advance the RNG after resetting it in order to get
@@ -38,7 +42,9 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 	/**
 	 * Searches for an appropriate advance
 	 */
-	public abstract Optional<String> search(ResettableRandom rand, P parameters, RandomAction action);
+	public abstract SearchResult search(ResettableRandom rand, P parameters, RandomAction action);
+
+	public abstract void addExtraProperties(List<Property<?>> properties);
 
 	/**
 	 * Utilizes hoppers choosing a random entity to pull items out from
@@ -116,6 +122,9 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 	 */
 	public static abstract class SimpleRNGAdvancer extends RNGAdvancer<SimpleRNGAdvancer.SimpleParameterHandler> {
 
+		public static final Property<Integer> ADVANCES = Property.create("advances", 0, Integer.MAX_VALUE,
+				Property.minimize());
+
 		public SimpleRNGAdvancer(String name) {
 			super(name);
 		}
@@ -128,19 +137,24 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		}
 
 		@Override
-		public Optional<String> search(ResettableRandom rand, SimpleParameterHandler parameters, RandomAction action) {
+		public void addExtraProperties(List<Property<?>> properties) {
+			properties.add(ADVANCES);
+		}
+
+		@Override
+		public SearchResult search(ResettableRandom rand, SimpleParameterHandler parameters, RandomAction action) {
 			int maxExtraRandCalls = parameters.getMaxExtraRandCalls();
 			for (int extraRandCalls = 0; extraRandCalls <= maxExtraRandCalls; extraRandCalls++) {
 				rand.saveState();
-				Optional<String> result = action.perform(rand);
-				if (result.isPresent()) {
+				SearchResult result = action.perform(rand);
+				if (result != null) {
 					rand.popState();
-					return Optional.of(result.get() + "; advances = " + extraRandCalls);
+					return result.withProperty(ADVANCES, extraRandCalls);
 				}
 				rand.restoreState();
 				advance(rand);
 			}
-			return Optional.empty();
+			return null;
 		}
 
 		public static class SimpleParameterHandler extends ParameterHandler {
@@ -291,6 +305,48 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 	public static abstract class RandomTickRNGAdvancer
 			extends RNGAdvancer<RandomTickRNGAdvancer.RandomTickParameterHandler> implements IPlayerChunkMapAware {
 
+		private static final int[] WORST_ARRAY = new int[0];
+		public static final Property<int[]> ADVANCES = Property
+				.<int[]>create("advances", new int[0], WORST_ARRAY,
+						Comparator.<int[]>comparingInt(arr -> arr == WORST_ARRAY ? 1 : 0)
+								.thenComparingLong(arr -> Arrays.stream(arr).filter(i -> i != 0).count()))
+				.setValueSerializer(arr -> {
+					int chunkCount = arr.length;
+					int currentNum = -1;
+					int beginIndex = -1;
+					StringBuilder str = new StringBuilder();
+					for (int index = 0; index < chunkCount; index++) {
+						if (arr[index] != currentNum) {
+							if (beginIndex != -1) {
+								if (str.length() != 0)
+									str.append(", ");
+								if (beginIndex == index - 1) {
+									str.append(beginIndex);
+								} else {
+									str.append(beginIndex).append("-").append(index - 1);
+								}
+								str.append(": ").append(currentNum);
+							}
+							beginIndex = index;
+							currentNum = arr[index];
+						}
+					}
+					if (beginIndex != chunkCount && currentNum != 0) {
+						if (beginIndex == -1) {
+							str.append("No chunks to be filled");
+						} else {
+							str.append(", ");
+							if (beginIndex == chunkCount - 1) {
+								str.append(beginIndex);
+							} else {
+								str.append(beginIndex).append("-").append(chunkCount - 1);
+							}
+							str.append(": ").append(currentNum);
+						}
+					}
+					return "[" + str + "]";
+				});
+
 		private static final int MAX_LEAVES_SEARCHED = 1000000;
 
 		public RandomTickRNGAdvancer(String name) {
@@ -317,8 +373,12 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		}
 
 		@Override
-		public Optional<String> search(ResettableRandom rand, RandomTickParameterHandler parameters,
-				RandomAction action) {
+		public void addExtraProperties(List<Property<?>> properties) {
+			properties.add(ADVANCES);
+		}
+
+		@Override
+		public SearchResult search(ResettableRandom rand, RandomTickParameterHandler parameters, RandomAction action) {
 			int viewDistance = parameters.getViewDistance();
 			double playerX = parameters.getPlayerXInChunk();
 			double playerZ = parameters.getPlayerZInChunk();
@@ -336,13 +396,13 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 
 			int subchunksPerChunk = parameters.getSubchunksPerChunk();
 
-			Optional<String> result = Optional.empty();
+			SearchResult result = null;
 			rand.saveState();
 			int callsNeeded = chunkCount * subchunksPerChunk * RANDOM_TICK_SPEED * maxCallsPerRandomTick();
 			for (int calls = 0; calls <= callsNeeded; calls++) {
 				rand.saveState();
 				result = action.perform(rand);
-				if (result.isPresent()) {
+				if (result != null) {
 					rand.restoreState();
 					callsNeeded = rand.getCount();
 					break;
@@ -352,52 +412,20 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 			}
 			rand.restoreState();
 
-			if (!result.isPresent())
-				return result;
+			if (result == null)
+				return null;
 
 			int[] subchunkCounts = new int[chunkCount];
 
-			if (recursiveSearch(0, chunkCount, callsNeeded, subchunksPerChunk, rand, subchunkCounts, action,
-					new int[1])) {
-				int currentNum = -1;
-				int beginIndex = -1;
-				StringBuilder str = new StringBuilder();
-				for (int index = 0; index < chunkCount; index++) {
-					if (subchunkCounts[index] != currentNum) {
-						if (beginIndex != -1) {
-							if (str.length() != 0)
-								str.append(", ");
-							if (beginIndex == index - 1) {
-								str.append(beginIndex);
-							} else {
-								str.append(beginIndex).append("-").append(index - 1);
-							}
-							str.append(": ").append(currentNum);
-						}
-						beginIndex = index;
-						currentNum = subchunkCounts[index];
-					}
-				}
-				if (beginIndex != chunkCount && currentNum != 0) {
-					if (beginIndex == -1) {
-						str.append("No chunks to be filled");
-					} else {
-						if (beginIndex == chunkCount - 1) {
-							str.append(beginIndex);
-						} else {
-							str.append(beginIndex).append("-").append(chunkCount - 1);
-						}
-						str.append(": ").append(currentNum);
-					}
-				}
-				return Optional.of(result.get() + "; advances = [" + str + "]");
+			if (recursiveSearch(0, chunkCount, callsNeeded, subchunksPerChunk, rand, subchunkCounts, new int[1])) {
+				return result.withProperty(ADVANCES, subchunkCounts);
 			} else {
-				return Optional.empty();
+				return null;
 			}
 		}
 
 		protected boolean recursiveSearch(int chunkIndex, int chunkCount, int callsNeeded, int subchunksPerChunk,
-				ResettableRandom rand, int[] subchunkCounts, RandomAction action, int[] leavesSearched) {
+				ResettableRandom rand, int[] subchunkCounts, int[] leavesSearched) {
 			if (chunkIndex == chunkCount) {
 				leavesSearched[0]++;
 				return rand.getCount() == callsNeeded;
@@ -425,7 +453,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 					}
 				}
 				boolean result = recursiveSearch(chunkIndex + 1, chunkCount, callsNeeded, subchunksPerChunk, rand,
-						subchunkCounts, action, leavesSearched);
+						subchunkCounts, leavesSearched);
 				rand.restoreState();
 				if (result) {
 					subchunkCounts[chunkIndex] = subchunks;
@@ -648,7 +676,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 
 	@FunctionalInterface
 	public static interface RandomAction {
-		Optional<String> perform(ResettableRandom rand);
+		SearchResult perform(ResettableRandom rand);
 	}
 
 }

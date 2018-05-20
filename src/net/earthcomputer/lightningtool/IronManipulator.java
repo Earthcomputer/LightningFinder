@@ -1,12 +1,18 @@
 package net.earthcomputer.lightningtool;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
+
+import net.earthcomputer.lightningtool.SearchResult.Property;
 
 public class IronManipulator extends AbstractManipulator {
 
 	private int playerChunks;
 
 	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.DISPENSER, RNGAdvancer.LAVA };
+
+	public static final Property<BlockPos> GOLEM_POS = Property.create("golem pos", new BlockPos(0, 0, 0),
+			new BlockPos(0, 0, 0), Property.indifferent());
 
 	@Override
 	protected boolean parseExtra() {
@@ -38,7 +44,7 @@ public class IronManipulator extends AbstractManipulator {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected <P extends RNGAdvancer.ParameterHandler> Optional<String> testRegionWithAdvancer(int x, int z) {
+	protected <P extends RNGAdvancer.ParameterHandler> SearchResult testRegionWithAdvancer(int x, int z) {
 		for (int i = 0; i < 4; i++)
 			rand.nextInt();
 
@@ -50,7 +56,7 @@ public class IronManipulator extends AbstractManipulator {
 	}
 
 	@Override
-	protected Optional<String> testRegion(int x, int z) {
+	protected SearchResult testRegion(int x, int z) {
 		for (int i = 0; i < 4; i++)
 			rand.nextInt();
 
@@ -60,7 +66,7 @@ public class IronManipulator extends AbstractManipulator {
 		return testIronGolem();
 	}
 
-	private Optional<String> testIronGolem() {
+	private SearchResult testIronGolem() {
 		rand.nextInt(50);
 
 		if (rand.nextInt(7000) == 0) {
@@ -68,10 +74,19 @@ public class IronManipulator extends AbstractManipulator {
 			int golemX = rand.nextInt(16) - 8;
 			int golemY = rand.nextInt(6) - 3;
 			int golemZ = rand.nextInt(16) - 8;
-			return Optional.of(String.format("golem pos = (%d, %d, %d)", golemX, golemY, golemZ));
+			return createSearchResult().withProperty(GOLEM_POS, new BlockPos(golemX, golemY, golemZ));
 		}
 
-		return Optional.empty();
+		return null;
+	}
+
+	@Override
+	protected SearchResult createSearchResult() {
+		List<Property<?>> properties = new ArrayList<>();
+		properties.add(DISTANCE);
+		properties.add(GOLEM_POS);
+		advancer.addExtraProperties(properties);
+		return new SearchResult(properties);
 	}
 
 }

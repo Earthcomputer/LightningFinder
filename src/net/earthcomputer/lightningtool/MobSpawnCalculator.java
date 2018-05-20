@@ -26,7 +26,7 @@ public class MobSpawnCalculator {
 
 	private static final int[] MOB_Y_HEIGHT_COLUMN_INDEXES = { 4, 9, 13, 17 };
 
-	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.HOPPER };
+	public static final RNGAdvancer<?>[] ADVANCERS = { /* RNGAdvancer.HOPPER */ }; // TODO: implement advancers for this
 
 	public static void recalculate(MainFrame frame, boolean eraseTable, boolean ignoreErrors) {
 		if (!ignoreErrors) {

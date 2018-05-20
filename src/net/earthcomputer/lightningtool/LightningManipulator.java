@@ -1,7 +1,10 @@
 package net.earthcomputer.lightningtool;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.DoublePredicate;
+
+import net.earthcomputer.lightningtool.SearchResult.Property;
 
 public class LightningManipulator extends AbstractManipulator {
 
@@ -9,6 +12,11 @@ public class LightningManipulator extends AbstractManipulator {
 	private int chunkCount;
 
 	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.DISPENSER, RNGAdvancer.LAVA_LIGHTNING };
+
+	public static final Property<Integer> CHUNK_INDEX = Property.create("chunk index", 0, Integer.MAX_VALUE,
+			Property.minimize());
+	public static final Property<Double> TRAP_VALUE = Property.create("trap value", Double.MAX_VALUE, Double.MAX_VALUE,
+			Property.indifferent());
 
 	@Override
 	protected boolean parseExtra() {
@@ -49,7 +57,7 @@ public class LightningManipulator extends AbstractManipulator {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected <P extends RNGAdvancer.ParameterHandler> Optional<String> testRegionWithAdvancer(int x, int z) {
+	protected <P extends RNGAdvancer.ParameterHandler> SearchResult testRegionWithAdvancer(int x, int z) {
 		for (int i = 0; i < 4; i++)
 			rand.nextInt();
 
@@ -61,35 +69,41 @@ public class LightningManipulator extends AbstractManipulator {
 	}
 
 	@Override
-	protected Optional<String> testRegion(int x, int z) {
+	protected SearchResult testRegion(int x, int z) {
 		for (int i = 0; i < 4; i++)
 			rand.nextInt();
 
 		for (int chunkIdx = 0; chunkIdx < chunkCount; chunkIdx++) {
-			Optional<String> result = testForLightning();
-			if (result.isPresent()) {
-				return Optional.of(result.get() + ", chunkIdx = " + chunkIdx);
+			SearchResult result = testForLightning();
+			if (result != null) {
+				return result.withProperty(CHUNK_INDEX, chunkIdx);
 			}
 			rand.nextInt();
 		}
 
-		return Optional.empty();
+		return null;
 	}
 
-	private Optional<String> testForLightning() {
+	private SearchResult testForLightning() {
 		int lightningValue = rand.nextInt(100000);
 		if (lightningValue == 0) {
 			double trapValue = rand.nextDouble();
 			if (trapValuePredicate.test(trapValue)) {
-				return Optional.of(String.format("trap value = %f", trapValue));
+				return createSearchResult().withProperty(TRAP_VALUE, trapValue);
 			}
 		}
-		return Optional.empty();
+		return null;
 	}
 
 	@Override
-	protected String getRegionSeparator(int newX, int newZ) {
-		return "------ REGION (" + newX + ", " + newZ + ") ------";
+	protected SearchResult createSearchResult() {
+		List<Property<?>> properties = new ArrayList<>();
+		properties.add(DISTANCE);
+		if (!(advancer instanceof RNGAdvancer.IPlayerChunkMapAware))
+			properties.add(CHUNK_INDEX);
+		properties.add(TRAP_VALUE);
+		advancer.addExtraProperties(properties);
+		return new SearchResult(properties);
 	}
 
 }

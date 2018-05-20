@@ -1,6 +1,9 @@
 package net.earthcomputer.lightningtool;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
+
+import net.earthcomputer.lightningtool.SearchResult.Property;
 
 public class WeatherManipulator extends AbstractManipulator {
 
@@ -23,8 +26,9 @@ public class WeatherManipulator extends AbstractManipulator {
 	private boolean shouldManipulateRain;
 	private boolean rainTurningOn;
 	private int targetRainTime;
-	private int minTotalErrorRain = Integer.MAX_VALUE;
-	private int minTotalErrorThunder = Integer.MAX_VALUE;
+
+	private Property<Integer> thunderTimeProperty;
+	private Property<Integer> rainTimeProperty;
 
 	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.HOPPER };
 
@@ -79,47 +83,47 @@ public class WeatherManipulator extends AbstractManipulator {
 	}
 
 	@Override
-	protected Optional<String> testRegion(int x, int z) {
-		int totalError = 0;
-		String result = null;
-		int thunderTime = Integer.MAX_VALUE;
-		int rainTime = Integer.MAX_VALUE;
+	protected SearchResult testRegion(int x, int z) {
+		SearchResult result = createSearchResult();
 		if (shouldManipulateThunder) {
+			int thunderTime;
 			if (thunderTurningOn) {
 				thunderTime = rand.nextInt(THUNDER_ON_RANGE) + THUNDER_ON_BASE;
 			} else {
 				thunderTime = rand.nextInt(THUNDER_OFF_RANGE) + THUNDER_OFF_BASE;
 			}
-			result = "thunder = " + thunderTime;
-			totalError = Math.max(totalError, Math.abs(targetThunderTime - thunderTime));
+			result = result.withProperty(thunderTimeProperty, thunderTime);
 		}
 		if (shouldManipulateRain) {
+			int rainTime;
 			if (rainTurningOn) {
 				rainTime = rand.nextInt(RAIN_ON_RANGE) + RAIN_ON_BASE;
 			} else {
 				rainTime = rand.nextInt(RAIN_OFF_RANGE) + RAIN_OFF_BASE;
 			}
-			if (result == null)
-				result = "rain = " + rainTime;
-			else
-				result += ", rain = " + rainTime;
-			totalError = Math.max(totalError, Math.abs(rainTime - targetRainTime));
+			result = result.withProperty(rainTimeProperty, rainTime);
 		}
+		return result;
+	}
 
-		boolean goodResult = false;
-		if (rainTime <= thunderTime && totalError < minTotalErrorRain) {
-			minTotalErrorRain = totalError;
-			goodResult = true;
+	@Override
+	protected SearchResult createSearchResult() {
+		List<Property<?>> properties = new ArrayList<>();
+		properties.add(DISTANCE);
+		if (shouldManipulateThunder) {
+			if (thunderTimeProperty == null)
+				thunderTimeProperty = Property.create("thunder", targetThunderTime, Integer.MAX_VALUE,
+						Property.distanceTo(targetThunderTime));
+			properties.add(thunderTimeProperty);
 		}
-		if (thunderTime <= rainTime && totalError < minTotalErrorThunder) {
-			minTotalErrorThunder = totalError;
-			goodResult = true;
+		if (shouldManipulateRain) {
+			if (rainTimeProperty == null)
+				rainTimeProperty = Property.create("rain", targetRainTime, Integer.MAX_VALUE,
+						Property.distanceTo(targetRainTime));
+			properties.add(rainTimeProperty);
 		}
-
-		if (goodResult)
-			return Optional.of(result);
-		else
-			return Optional.empty();
+		advancer.addExtraProperties(properties);
+		return new SearchResult(properties);
 	}
 
 }

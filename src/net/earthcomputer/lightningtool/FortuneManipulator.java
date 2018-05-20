@@ -1,7 +1,10 @@
 package net.earthcomputer.lightningtool;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
+import net.earthcomputer.lightningtool.SearchResult.Property;
 
 public class FortuneManipulator extends AbstractManipulator {
 
@@ -13,8 +16,8 @@ public class FortuneManipulator extends AbstractManipulator {
 	private boolean xpDropAmountExact;
 	private int fortuneLevel;
 
-	private int bestQuantityDropped = -1;
-	private int bestXpDropped = -1;
+	private Property<Integer> dropAmountProperty;
+	private Property<Integer> xpDropAmountProperty;
 
 	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.HOPPER };
 
@@ -55,43 +58,40 @@ public class FortuneManipulator extends AbstractManipulator {
 	}
 
 	@Override
-	protected Optional<String> testRegion(int x, int z) {
+	protected SearchResult testRegion(int x, int z) {
 		int quantityDropped = ore.quantityDropped(fortuneLevel, rand);
-		boolean quantityDroppedWanted;
-		if (dropAmountExact) {
-			quantityDroppedWanted = dropAmount == quantityDropped;
-		} else {
-			quantityDroppedWanted = quantityDropped > bestQuantityDropped;
-		}
-		if (quantityDroppedWanted) {
-			bestXpDropped = -1;
-			bestQuantityDropped = quantityDropped;
-		}
-
-		boolean xpDroppedWanted;
 		int xpDropped = ore.xpDropped(rand);
-		if (!manipulateXp) {
-			xpDroppedWanted = false;
-		} else if (xpDropAmountExact) {
-			xpDroppedWanted = xpDropAmount == xpDropped;
-		} else {
-			xpDroppedWanted = xpDropped > bestXpDropped;
-		}
-		xpDroppedWanted &= quantityDropped >= bestQuantityDropped;
-		if (xpDroppedWanted) {
-			bestXpDropped = xpDropped;
-		}
 
-		if (!quantityDroppedWanted && !xpDroppedWanted) {
-			return Optional.empty();
-		}
+		return createSearchResult().withProperty(dropAmountProperty, quantityDropped).withProperty(xpDropAmountProperty,
+				xpDropped);
+	}
 
-		if (quantityDroppedWanted && (!manipulateXp || xpDroppedWanted) && quantityDropped >= dropAmount
-				&& xpDropped >= xpDropAmount) {
-			stop();
+	@Override
+	protected SearchResult createSearchResult() {
+		List<Property<?>> properties = new ArrayList<>();
+		properties.add(DISTANCE);
+		if (dropAmountProperty == null) {
+			if (dropAmountExact) {
+				dropAmountProperty = Property.create("drop amount", dropAmount, 0, Property.distanceTo(dropAmount));
+			} else {
+				dropAmountProperty = Property.create("drop amount", dropAmount, 0, Property.maximize());
+			}
 		}
-
-		return Optional.of(String.format("Quantity = %d, XP = %d", quantityDropped, xpDropped));
+		properties.add(dropAmountProperty);
+		if (xpDropAmountProperty == null) {
+			if (manipulateXp) {
+				if (xpDropAmountExact) {
+					xpDropAmountProperty = Property.create("xp", xpDropAmount, 0, Property.distanceTo(xpDropAmount));
+				} else {
+					xpDropAmountProperty = Property.create("xp", xpDropAmount, 0, Property.maximize());
+				}
+			} else {
+				xpDropAmountProperty = Property.create("xp", 0, 0, Property.indifferent());
+			}
+		}
+		properties.add(xpDropAmountProperty);
+		advancer.addExtraProperties(properties);
+		return new SearchResult(properties);
 	}
 
 	public static enum Ore {
