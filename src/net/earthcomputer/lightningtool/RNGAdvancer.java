@@ -179,7 +179,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 				{
 					JPanel horPanel = new JPanel();
 					((FlowLayout) horPanel.getLayout()).setAlignment(FlowLayout.LEFT);
-					horPanel.add(new JLabel("Max advances calls:"));
+					horPanel.add(new JLabel("Max advances:"));
 					maxExtraRandCallsTextField = new JTextField("0");
 					maxExtraRandCallsTextField.setColumns(10);
 					horPanel.add(maxExtraRandCallsTextField);
