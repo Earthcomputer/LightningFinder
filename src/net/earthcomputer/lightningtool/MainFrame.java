@@ -987,8 +987,8 @@ public class MainFrame extends JFrame {
 		if (advancer == null) {
 			this.rngAdvancerParameterHandler = null;
 		} else {
-			RNGAdvancer.ParameterHandler parameterHandler = advancer.createParameterHandler();
-			advancerParametersPanel.add(parameterHandler.createPanel());
+			RNGAdvancer.ParameterHandler parameterHandler = advancer.getParameterHandler();
+			advancerParametersPanel.add(advancer.getParameterPanel());
 			this.rngAdvancerParameterHandler = parameterHandler;
 		}
 		revalidate();

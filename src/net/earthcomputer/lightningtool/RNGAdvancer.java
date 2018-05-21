@@ -20,6 +20,8 @@ import net.earthcomputer.lightningtool.SearchResult.Property;
 public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 
 	private String name;
+	private P parameterHandler = createParameterHandler();
+	private JPanel parameterPanel = parameterHandler.createPanel();
 
 	public RNGAdvancer(String name) {
 		this.name = name;
@@ -34,10 +36,18 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		return name;
 	}
 
+	public P getParameterHandler() {
+		return parameterHandler;
+	}
+
+	public JPanel getParameterPanel() {
+		return parameterPanel;
+	}
+
 	/**
 	 * Creates a new parameter handler
 	 */
-	public abstract P createParameterHandler();
+	protected abstract P createParameterHandler();
 
 	/**
 	 * Searches for an appropriate advance
@@ -132,7 +142,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		protected abstract void advance(ResettableRandom rand);
 
 		@Override
-		public SimpleParameterHandler createParameterHandler() {
+		protected SimpleParameterHandler createParameterHandler() {
 			return new SimpleParameterHandler();
 		}
 
@@ -205,7 +215,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		}
 
 		@Override
-		public ViewDistanceParameterHandler createParameterHandler() {
+		protected ViewDistanceParameterHandler createParameterHandler() {
 			return new ViewDistanceParameterHandler();
 		}
 
@@ -368,7 +378,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		}
 
 		@Override
-		public RandomTickParameterHandler createParameterHandler() {
+		protected RandomTickParameterHandler createParameterHandler() {
 			return new RandomTickParameterHandler();
 		}
 
@@ -595,7 +605,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		}
 
 		@Override
-		public LightningRandomTickParameterHandler createParameterHandler() {
+		protected LightningRandomTickParameterHandler createParameterHandler() {
 			return new LightningRandomTickParameterHandler();
 		}
 
