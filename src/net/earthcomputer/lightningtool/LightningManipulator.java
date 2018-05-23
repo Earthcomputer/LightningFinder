@@ -70,9 +70,6 @@ public class LightningManipulator extends AbstractManipulator {
 
 	@Override
 	protected SearchResult testRegion(int x, int z) {
-		for (int i = 0; i < 4; i++)
-			rand.nextInt();
-
 		for (int chunkIdx = 0; chunkIdx < chunkCount; chunkIdx++) {
 			SearchResult result = testForLightning();
 			if (result != null) {
@@ -87,6 +84,7 @@ public class LightningManipulator extends AbstractManipulator {
 	private SearchResult testForLightning() {
 		int lightningValue = rand.nextInt(100000);
 		if (lightningValue == 0) {
+			rand.nextInt();
 			double trapValue = rand.nextDouble();
 			if (trapValuePredicate.test(trapValue)) {
 				return createSearchResult().withProperty(TRAP_VALUE, trapValue);
