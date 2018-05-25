@@ -57,9 +57,6 @@ public class IronManipulator extends AbstractManipulator {
 
 	@Override
 	protected SearchResult testRegion(int x, int z) {
-		for (int i = 0; i < 4; i++)
-			rand.nextInt();
-
 		for (int i = 0; i < playerChunks; i++)
 			rand.nextInt();
 
