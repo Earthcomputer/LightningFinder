@@ -2,6 +2,7 @@ package net.earthcomputer.lightningtool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import net.earthcomputer.lightningtool.SearchResult.Property;
 
@@ -44,14 +45,16 @@ public class IronManipulator extends AbstractManipulator {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected <P extends RNGAdvancer.ParameterHandler> SearchResult testRegionWithAdvancer(int x, int z) {
+	protected <P extends RNGAdvancer.ParameterHandler> void testRegionWithAdvancer(int x, int z,
+			Consumer<SearchResult> resultConsumer) {
 		for (int i = 0; i < 4; i++)
 			rand.nextInt();
 
 		if (advancer instanceof RNGAdvancer.IPlayerChunkMapAware) {
-			return ((RNGAdvancer<P>) advancer).search(rand, (P) advancerParameterHandler, rand -> testIronGolem());
+			((RNGAdvancer<P>) advancer).search(rand, (P) advancerParameterHandler, rand -> testIronGolem(),
+					resultConsumer);
 		} else {
-			return super.testRegionWithAdvancer(x, z);
+			super.testRegionWithAdvancer(x, z, resultConsumer);
 		}
 	}
 

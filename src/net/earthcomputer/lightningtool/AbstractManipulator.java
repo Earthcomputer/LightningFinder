@@ -2,6 +2,7 @@ package net.earthcomputer.lightningtool;
 
 import java.awt.Color;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
@@ -107,27 +108,28 @@ public abstract class AbstractManipulator {
 
 	private void searchRegion(int x, int z, int count) {
 		resetSeed(rand, x, z, worldSeed);
-		SearchResult result = testRegionWithAdvancer(x, z);
-		if (result != null)
-			result = result.withProperty(DISTANCE, Math.abs((fromX - x) * 80 * 16) + Math.abs((fromZ - z) * 80 * 16));
-		if (result != null && bestResult.mergeBetter(result)) {
-			String output = String.format("(%d, %d) to (%d, %d) %s", x * 80 * 16 - 128, z * 80 * 16 - 128,
-					(x + 1) * 80 * 16 - 128 - 1, (z + 1) * 80 * 16 - 128 - 1, result);
-			SwingUtilities.invokeLater(() -> {
-				frame.getLblOutput().setForeground(Color.BLACK);
-				frame.getLblOutput().setText(output);
-				frame.getOutputTextArea().append(output + "\n");
-			});
-		}
+		testRegionWithAdvancer(x, z, result -> {
+			result = result.withProperty(DISTANCE,
+					Math.abs((fromX - x) * 80 * 16) + Math.abs((fromZ - z) * 80 * 16));
+			if (bestResult.mergeBetter(result)) {
+				String output = String.format("(%d, %d) to (%d, %d) %s", x * 80 * 16 - 128, z * 80 * 16 - 128,
+						(x + 1) * 80 * 16 - 128 - 1, (z + 1) * 80 * 16 - 128 - 1, result);
+				SwingUtilities.invokeLater(() -> {
+					frame.getLblOutput().setForeground(Color.BLACK);
+					frame.getLblOutput().setText(output);
+					frame.getOutputTextArea().append(output + "\n");
+				});
+			}
 
-		long currentTime = System.nanoTime();
-		if (currentTime - lastProgressBarUpdateTime > 100_000_000) {
-			lastProgressBarUpdateTime = currentTime;
-			SwingUtilities.invokeLater(() -> frame.getProgressBar().setString(count + " regions searched"));
-		}
+			long currentTime = System.nanoTime();
+			if (currentTime - lastProgressBarUpdateTime > 100_000_000) {
+				lastProgressBarUpdateTime = currentTime;
+				SwingUtilities.invokeLater(() -> frame.getProgressBar().setString(count + " regions searched"));
+			}
 
-		if (result != null && result.isIdeal())
-			stop();
+			if (result.isIdeal())
+				stop();
+		});
 	}
 
 	public static void resetSeed(Random rand, int x, int z, long worldSeed) {
@@ -137,9 +139,10 @@ public abstract class AbstractManipulator {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected <P extends RNGAdvancer.ParameterHandler> SearchResult testRegionWithAdvancer(int x, int z) {
+	protected <P extends RNGAdvancer.ParameterHandler> void testRegionWithAdvancer(int x, int z,
+			Consumer<SearchResult> resultConsumer) {
 		RNGAdvancer<P> advancer = (RNGAdvancer<P>) this.advancer;
-		return advancer.search(rand, (P) advancerParameterHandler, rand -> testRegion(x, z));
+		advancer.search(rand, (P) advancerParameterHandler, rand -> testRegion(x, z), resultConsumer);
 	}
 
 	protected abstract SearchResult testRegion(int x, int z);

@@ -4,6 +4,7 @@ import java.awt.FlowLayout;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -52,7 +53,8 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 	/**
 	 * Searches for an appropriate advance
 	 */
-	public abstract SearchResult search(ResettableRandom rand, P parameters, RandomAction action);
+	public abstract void search(ResettableRandom rand, P parameters, RandomAction action,
+			Consumer<SearchResult> resultConsumer);
 
 	public abstract void addExtraProperties(List<Property<?>> properties);
 
@@ -152,19 +154,18 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		}
 
 		@Override
-		public SearchResult search(ResettableRandom rand, SimpleParameterHandler parameters, RandomAction action) {
+		public void search(ResettableRandom rand, SimpleParameterHandler parameters, RandomAction action,
+				Consumer<SearchResult> resultConsumer) {
 			int maxExtraRandCalls = parameters.getMaxExtraRandCalls();
 			for (int extraRandCalls = 0; extraRandCalls <= maxExtraRandCalls; extraRandCalls++) {
 				rand.saveState();
 				SearchResult result = action.perform(rand);
 				if (result != null) {
-					rand.popState();
-					return result.withProperty(ADVANCES, extraRandCalls);
+					resultConsumer.accept(result.withProperty(ADVANCES, extraRandCalls));
 				}
 				rand.restoreState();
 				advance(rand);
 			}
-			return null;
 		}
 
 		public static class SimpleParameterHandler extends ParameterHandler {
@@ -388,7 +389,8 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 		}
 
 		@Override
-		public SearchResult search(ResettableRandom rand, RandomTickParameterHandler parameters, RandomAction action) {
+		public void search(ResettableRandom rand, RandomTickParameterHandler parameters, RandomAction action,
+				Consumer<SearchResult> resultConsumer) {
 			int viewDistance = parameters.getViewDistance();
 			double playerX = parameters.getPlayerXInChunk();
 			double playerZ = parameters.getPlayerZInChunk();
@@ -422,15 +424,12 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 			}
 			rand.restoreState();
 
-			if (result == null)
-				return null;
+			if (result != null) {
+				int[] subchunkCounts = new int[chunkCount];
 
-			int[] subchunkCounts = new int[chunkCount];
-
-			if (recursiveSearch(0, chunkCount, callsNeeded, subchunksPerChunk, rand, subchunkCounts, new int[1])) {
-				return result.withProperty(ADVANCES, subchunkCounts);
-			} else {
-				return null;
+				if (recursiveSearch(0, chunkCount, callsNeeded, subchunksPerChunk, rand, subchunkCounts, new int[1])) {
+					resultConsumer.accept(result.withProperty(ADVANCES, subchunkCounts));
+				}
 			}
 		}
 
