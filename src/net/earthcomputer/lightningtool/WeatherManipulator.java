@@ -29,6 +29,7 @@ public class WeatherManipulator extends AbstractManipulator {
 
 	private Property<Integer> thunderTimeProperty;
 	private Property<Integer> rainTimeProperty;
+	private Property<Long> combinedProperty;
 
 	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.HOPPER };
 
@@ -85,8 +86,9 @@ public class WeatherManipulator extends AbstractManipulator {
 	@Override
 	protected SearchResult testRegion(int x, int z) {
 		SearchResult result = createSearchResult();
+		int thunderTime = 0;
+		int rainTime = 0;
 		if (shouldManipulateThunder) {
-			int thunderTime;
 			if (thunderTurningOn) {
 				thunderTime = rand.nextInt(THUNDER_ON_RANGE) + THUNDER_ON_BASE;
 			} else {
@@ -95,13 +97,18 @@ public class WeatherManipulator extends AbstractManipulator {
 			result = result.withProperty(thunderTimeProperty, thunderTime);
 		}
 		if (shouldManipulateRain) {
-			int rainTime;
 			if (rainTurningOn) {
 				rainTime = rand.nextInt(RAIN_ON_RANGE) + RAIN_ON_BASE;
 			} else {
 				rainTime = rand.nextInt(RAIN_OFF_RANGE) + RAIN_OFF_BASE;
 			}
 			result = result.withProperty(rainTimeProperty, rainTime);
+		}
+		if (shouldManipulateThunder && shouldManipulateRain) {
+			long r = (long)targetRainTime - rainTime;
+			long t = (long)targetThunderTime - thunderTime;
+			long weight = r*r + t*t;
+			result = result.withProperty(combinedProperty, weight);
 		}
 		return result;
 	}
@@ -110,17 +117,24 @@ public class WeatherManipulator extends AbstractManipulator {
 	protected SearchResult createSearchResult() {
 		List<Property<?>> properties = new ArrayList<>();
 		properties.add(DISTANCE);
+		boolean both = shouldManipulateThunder && shouldManipulateRain;
 		if (shouldManipulateThunder) {
 			if (thunderTimeProperty == null)
 				thunderTimeProperty = Property.create("thunder", targetThunderTime, Integer.MAX_VALUE,
-						Property.distanceTo(targetThunderTime));
+						both ? Property.indifferent() : Property.distanceTo(targetThunderTime));
 			properties.add(thunderTimeProperty);
 		}
 		if (shouldManipulateRain) {
 			if (rainTimeProperty == null)
 				rainTimeProperty = Property.create("rain", targetRainTime, Integer.MAX_VALUE,
-						Property.distanceTo(targetRainTime));
+						both ? Property.indifferent() : Property.distanceTo(targetRainTime));
 			properties.add(rainTimeProperty);
+		}
+		if (both) {
+			if (combinedProperty == null) {
+				combinedProperty = Property.create("weight", (long)0, Long.MAX_VALUE, Property.minimize());
+			}
+			properties.add(combinedProperty);
 		}
 		advancer.addExtraProperties(properties);
 		return new SearchResult(properties);
