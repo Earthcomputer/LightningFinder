@@ -2,15 +2,13 @@ package net.earthcomputer.lightningtool;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,26 +20,31 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * <p>
  * A list that is used when its contents are expected to be very large, so large
  * that it may not even fit in RAM. This list works most efficiently if elements
  * are added, iterated over or otherwise accessed almost in sequence, either
  * forwards or backwards. Jumping around the list randomly is very inefficient.
+ * </p>
  * 
+ * <p>
  * This list only supports appending and removing at the end. It does not
  * support insertion or deletion anywhere else in the list.
+ * </p>
  * 
+ * <p>
  * The list stores <tt>numPages</tt> (default = 2) "pages" of memory in RAM,
  * while the rest is stored on the disk. These pages may consist of the page in
  * which the last accessed element, and <tt>numPages - 1</tt> previously
- * accessed pages. One extra page may also be allocated for temporary copying
- * purposes. With this in consideration, the <tt>pageSize</tt> field should be
- * set so that all these pages' contents will fit in RAM.
+ * accessed pages. With this in consideration, the <tt>pageSize</tt> field
+ * should be set so that all these pages' contents will fit in RAM.
+ * </p>
  * 
- * This class is not thread safe.
+ * <p>
+ * Instances of <tt>PagedList</tt> are not thread safe.
+ * </p>
  */
-public class PagedList<E extends Serializable> extends AbstractList<E> implements Serializable {
-
-	private static final long serialVersionUID = -5766387334126911626L;
+public class PagedList<E> extends AbstractList<E> implements Closeable {
 
 	private static int nextListId = 0;
 	private static File pagedListDir;
@@ -49,6 +52,7 @@ public class PagedList<E extends Serializable> extends AbstractList<E> implement
 	private final int numPages;
 	private final int pageSize;
 	private final int listId;
+	private final ElementSerializer<E> serializer;
 
 	private List<ArrayList<E>> pages = new ArrayList<>();
 	private final List<Integer> pageAccessTime = new ArrayList<>();
@@ -56,11 +60,11 @@ public class PagedList<E extends Serializable> extends AbstractList<E> implement
 	private int loadedPages;
 	private int size;
 
-	public PagedList(int pageSize) {
-		this(2, pageSize);
+	public PagedList(int pageSize, ElementSerializer<E> serializer) {
+		this(2, pageSize, serializer);
 	}
 
-	public PagedList(int numPages, int pageSize) {
+	public PagedList(int numPages, int pageSize, ElementSerializer<E> serializer) {
 		if (numPages < 1)
 			throw new IllegalArgumentException("numPages < 1");
 		if (pageSize < 1)
@@ -70,6 +74,7 @@ public class PagedList<E extends Serializable> extends AbstractList<E> implement
 		}
 		this.numPages = numPages;
 		this.pageSize = pageSize;
+		this.serializer = serializer;
 	}
 
 	@Override
@@ -184,6 +189,11 @@ public class PagedList<E extends Serializable> extends AbstractList<E> implement
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "PagedList{pages=" + (size == 0 ? 0 : (size - 1) / pageSize + 1) + "}";
+	}
+
 	// READING AND WRITING TO DISK
 
 	private static synchronized File getTempDir() {
@@ -217,6 +227,7 @@ public class PagedList<E extends Serializable> extends AbstractList<E> implement
 				}
 			}));
 		}
+		System.out.println(pagedListDir);
 		return pagedListDir;
 	}
 
@@ -226,60 +237,52 @@ public class PagedList<E extends Serializable> extends AbstractList<E> implement
 
 	private void savePageToDisk(int pageId, ArrayList<E> page) {
 		DataOutputStream dataOut = null;
-		ObjectOutputStream objectOut = null;
 		try {
 			File file = Files.createFile(getPageFile(pageId).toPath()).toFile();
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
 			dataOut = new DataOutputStream(out);
-			objectOut = new ObjectOutputStream(out);
 
 			dataOut.writeInt(page.size());
 			for (E e : page) {
-				objectOut.writeObject(e);
+				serializer.serialize(dataOut, e);
 			}
+			dataOut.flush();
 		} catch (IOException e) {
 			throw new RuntimeException("Exception writing page", e);
 		} finally {
 			try {
 				if (dataOut != null)
 					dataOut.close();
-				if (objectOut != null)
-					objectOut.close();
 			} catch (IOException ignore) {
 			}
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private void loadPageFromDisk(int pageId, ArrayList<E> page) {
 		DataInputStream dataIn = null;
-		ObjectInputStream objectIn = null;
 		try {
 			File file = getPageFile(pageId);
 			BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
 			dataIn = new DataInputStream(in);
-			objectIn = new ObjectInputStream(in);
 
 			int size = dataIn.readInt();
+			if (size > pageSize)
+				size = pageSize;
 			while (size < page.size())
 				page.remove(page.size() - 1);
 
 			for (int i = 0; i < page.size(); i++)
-				page.set(i, (E) objectIn.readObject());
+				page.set(i, serializer.deserialize(dataIn));
 			page.ensureCapacity(size);
 			for (int i = page.size(); i < size; i++)
-				page.add((E) objectIn.readObject());
+				page.add(serializer.deserialize(dataIn));
 
 		} catch (IOException e) {
 			throw new RuntimeException("Exception reading page", e);
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException("Corrupt page file", e);
 		} finally {
 			try {
 				if (dataIn != null)
 					dataIn.close();
-				if (objectIn != null)
-					objectIn.close();
 			} catch (IOException ignore) {
 			}
 		}
@@ -291,6 +294,18 @@ public class PagedList<E extends Serializable> extends AbstractList<E> implement
 		} catch (IOException e) {
 			throw new RuntimeException("Exception deleting page file", e);
 		}
+	}
+
+	@Override
+	public void close() {
+		for (int i = 0; i < pages.size(); i++)
+			deletePageFromDisk(i);
+	}
+
+	public static interface ElementSerializer<E> {
+		void serialize(DataOutputStream out, E e) throws IOException;
+
+		E deserialize(DataInputStream in) throws IOException;
 	}
 
 }
