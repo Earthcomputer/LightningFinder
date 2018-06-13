@@ -1,7 +1,12 @@
 package net.earthcomputer.lightningtool;
 
 import java.awt.FlowLayout;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -358,8 +363,6 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 					return "[" + str + "]";
 				});
 
-		private static final int MAX_LEAVES_SEARCHED = 1000000;
-
 		public RandomTickRNGAdvancer(String name) {
 			super(name);
 		}
@@ -409,16 +412,15 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 			int subchunksPerChunk = parameters.getSubchunksPerChunk();
 
 			SearchResult result = null;
+
+			int maxCalls = chunkCount * subchunksPerChunk * RANDOM_TICK_SPEED * maxCallsPerRandomTick();
+			int actualCalls;
 			rand.saveState();
-			int callsNeeded = chunkCount * subchunksPerChunk * RANDOM_TICK_SPEED * maxCallsPerRandomTick();
-			for (int calls = 0; calls <= callsNeeded; calls++) {
+			for (actualCalls = 0; actualCalls <= maxCalls; actualCalls++) {
 				rand.saveState();
 				result = action.perform(rand);
-				if (result != null) {
-					rand.restoreState();
-					callsNeeded = rand.getCount();
+				if (result != null)
 					break;
-				}
 				rand.restoreState();
 				rand.nextInt();
 			}
@@ -426,51 +428,142 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 
 			if (result != null) {
 				int[] subchunkCounts = new int[chunkCount];
-
-				if (recursiveSearch(0, chunkCount, callsNeeded, subchunksPerChunk, rand, subchunkCounts, new int[1])) {
-					resultConsumer.accept(result.withProperty(ADVANCES, subchunkCounts));
+				if (getSubchunkCountsWithCalls(rand, actualCalls, subchunkCounts, chunkCount, subchunksPerChunk)) {
+					result = result.withProperty(ADVANCES, subchunkCounts);
+					resultConsumer.accept(result);
 				}
 			}
 		}
 
-		protected boolean recursiveSearch(int chunkIndex, int chunkCount, int callsNeeded, int subchunksPerChunk,
-				ResettableRandom rand, int[] subchunkCounts, int[] leavesSearched) {
-			if (chunkIndex == chunkCount) {
-				leavesSearched[0]++;
-				return rand.getCount() == callsNeeded;
+		private boolean getSubchunkCountsWithCalls(ResettableRandom rand, int targetCalls, int[] subchunkCounts,
+				int chunkCount, int subchunksPerChunk) {
+			/*
+			 * Here we use dynamic programming to get a random call path with
+			 * the exact right number of random calls.
+			 * 
+			 * Think of the possible random calls as a directed acyclic graph,
+			 * with each node being a possible random state (seed) along the
+			 * way, and each arc joining the potential state after 1 chunk to a
+			 * potential state of the next chunk.
+			 * 
+			 * Because we are finding a path of exact length, we have to store a
+			 * list at each node rather than a fixed number of values like we
+			 * can in Dijkstra. Because of this, the total amount of data stored
+			 * may get very large, and so we use a paged list so we don't run
+			 * out of memory.
+			 * 
+			 * However, it is still possible to do Dijkstra-esque elimination
+			 * when two path lengths arriving at a node are equal. In this case,
+			 * the path with the least total subchunks of random ticks is
+			 * chosen.
+			 * 
+			 * Finally, some paths may also be eliminated early if we can be
+			 * sure that they will never reach the destination with the right
+			 * length.
+			 * 
+			 * At each node a list of previous nodes is stored, along with the
+			 * path lengths and total subchunk counts.
+			 */
+			class Node {
+				ArrayList<Integer> prevNodes = new ArrayList<>();
+				ArrayList<Integer> pathLengths = new ArrayList<>();
+				ArrayList<Integer> subchunkCounts = new ArrayList<>();
 			}
-			if (rand.getCount() > callsNeeded - 2 * (chunkCount - chunkIndex - 1)) {
-				leavesSearched[0]++;
-				return false;
-			}
-			if (leavesSearched[0] > MAX_LEAVES_SEARCHED) {
-				return false;
-			}
-
-			if (hasThunder()) {
-				if (rand.nextInt(100000) == 0) {
-					rand.nextLong();
-				}
-			}
-			rand.nextInt();
-
-			for (int subchunks = subchunksPerChunk; subchunks >= 0; subchunks--) {
-				rand.saveState();
-				for (int i = 0; i < subchunks; i++) {
-					for (int j = 0; j < RANDOM_TICK_SPEED; j++) {
-						randomTick(rand);
+			PagedList<Node> graph = new PagedList<>(1000, new PagedList.ElementSerializer<Node>() {
+				@Override
+				public void serialize(DataOutputStream out, Node e) throws IOException {
+					out.writeInt(e.prevNodes.size());
+					for (int i = 0, size = e.prevNodes.size(); i < size; i++) {
+						out.writeInt(e.prevNodes.get(i));
+						out.writeInt(e.pathLengths.get(i));
+						out.writeInt(e.subchunkCounts.get(i));
 					}
 				}
-				boolean result = recursiveSearch(chunkIndex + 1, chunkCount, callsNeeded, subchunksPerChunk, rand,
-						subchunkCounts, leavesSearched);
-				rand.restoreState();
-				if (result) {
-					subchunkCounts[chunkIndex] = subchunks;
-					return true;
+
+				@Override
+				public Node deserialize(DataInputStream in) throws IOException {
+					Node n = new Node();
+					int size = in.readInt();
+					n.prevNodes.ensureCapacity(size);
+					n.pathLengths.ensureCapacity(size);
+					n.subchunkCounts.ensureCapacity(size);
+					for (int i = 0; i < size; i++) {
+						n.prevNodes.add(in.readInt());
+						n.pathLengths.add(in.readInt());
+						n.subchunkCounts.add(in.readInt());
+					}
+					return n;
 				}
+			});
+			Node firstNode = new Node();
+			firstNode.prevNodes.add(-1);
+			firstNode.pathLengths.add(0);
+			firstNode.subchunkCounts.add(0);
+			graph.add(firstNode);
+
+			for (int call = 0; call <= targetCalls; call++) {
+				Node node = graph.get(call);
+				rand.saveState();
+				int initialCallCount = rand.getCount();
+				for (int subchunks = 0; subchunks < subchunksPerChunk; subchunks++) {
+					for (int i = 0; i < RANDOM_TICK_SPEED; i++) {
+						randomTick(rand);
+					}
+					int relativeCalls = rand.getCount() - initialCallCount;
+					int nextCalls = call + relativeCalls + 1; // + 1 for the rand.nextInt between random ticks
+
+					int callsLeft = targetCalls - nextCalls;
+					if (callsLeft < 0)
+						break;
+
+					while (graph.size() <= nextCalls)
+						graph.add(new Node());
+					Node nextNode = graph.get(nextCalls);
+					for (int path = 0; path < node.prevNodes.size(); path++) {
+						int chunksLeft = chunkCount - node.pathLengths.get(path);
+						if (callsLeft > chunksLeft * (RANDOM_TICK_SPEED * maxCallsPerRandomTick() + 1))
+							continue;
+						if (callsLeft < chunksLeft)
+							continue;
+
+						int nextPathLength = node.pathLengths.get(path) + 1;
+						int nextSubchunkCount = node.subchunkCounts.get(path) + subchunks;
+						int indexToAdd = Collections.binarySearch(nextNode.pathLengths, nextPathLength);
+						if (nextNode.pathLengths.get(indexToAdd) == nextPathLength) {
+							// there is a path of the same length already leading to that node
+							if (nextNode.subchunkCounts.get(indexToAdd) > nextSubchunkCount) {
+								nextNode.prevNodes.set(indexToAdd, call);
+								nextNode.subchunkCounts.set(indexToAdd, nextSubchunkCount);
+							}
+						} else {
+							nextNode.prevNodes.add(indexToAdd, call);
+							nextNode.pathLengths.add(indexToAdd, nextPathLength);
+							nextNode.subchunkCounts.add(indexToAdd, nextSubchunkCount);
+						}
+					}
+				}
+				rand.restoreState();
+				rand.nextInt();
 			}
 
-			return false;
+			try {
+				Node node = graph.get(targetCalls);
+				int pathLength = targetCalls;
+				int path = Collections.binarySearch(node.pathLengths, pathLength);
+				if (node.pathLengths.get(path) != pathLength)
+					return false;
+
+				while (pathLength != 0) {
+					node = graph.get(node.prevNodes.get(path));
+					pathLength--;
+					path = Collections.binarySearch(node.pathLengths, pathLength);
+					subchunkCounts[pathLength] = node.subchunkCounts.get(path);
+				}
+			} finally {
+				graph.close();
+			}
+
+			return true;
 		}
 
 		public static class RandomTickParameterHandler extends ParameterHandler

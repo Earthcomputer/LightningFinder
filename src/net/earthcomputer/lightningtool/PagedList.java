@@ -138,6 +138,16 @@ public class PagedList<E> extends AbstractList<E> implements Closeable {
 		return size;
 	}
 
+	@Override
+	public void clear() {
+		for (int i = 0; i < pages.size(); i++)
+			deletePageFromDisk(i);
+		pages.clear();
+		pageAccessTime.clear();
+		size = 0;
+		loadedPages = 0;
+	}
+
 	private ArrayList<E> getOrCreatePage(int pageId) {
 		if (pageId == pages.size()) {
 			ensureSpaceForNewPage();
@@ -184,7 +194,6 @@ public class PagedList<E> extends AbstractList<E> implements Closeable {
 			}
 			savePageToDisk(oldestLoadedPage, pages.get(oldestLoadedPage));
 			pages.set(oldestLoadedPage, null);
-			System.gc();
 			loadedPages--;
 		}
 	}
