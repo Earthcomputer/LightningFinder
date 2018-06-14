@@ -413,15 +413,20 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 
 			SearchResult result = null;
 
-			int maxCalls = chunkCount * subchunksPerChunk * RANDOM_TICK_SPEED * maxCallsPerRandomTick();
+			int maxCalls = chunkCount * (
+							subchunksPerChunk * RANDOM_TICK_SPEED * maxCallsPerRandomTick()
+							+ (hasThunder() ? 2 : 1)
+			);
 			int actualCalls;
 			rand.saveState();
-			for (actualCalls = 0; actualCalls <= maxCalls; actualCalls++) {
+			if (hasThunder())
+				rand.nextInt();
+			for (actualCalls = hasThunder() ? 1 : 0; actualCalls <= maxCalls; actualCalls++) {
 				rand.saveState();
 				result = action.perform(rand);
+				rand.restoreState();
 				if (result != null)
 					break;
-				rand.restoreState();
 				rand.nextInt();
 			}
 			rand.restoreState();
@@ -502,13 +507,14 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 			graph.add(firstNode);
 
 			for (int call = 0; call <= targetCalls; call++) {
+				if (call == graph.size())
+					graph.add(new Node());
 				Node node = graph.get(call);
 				rand.saveState();
 				int initialCallCount = rand.getCount();
+				if (hasThunder())
+					rand.nextInt(100000);
 				for (int subchunks = 0; subchunks < subchunksPerChunk; subchunks++) {
-					for (int i = 0; i < RANDOM_TICK_SPEED; i++) {
-						randomTick(rand);
-					}
 					int relativeCalls = rand.getCount() - initialCallCount;
 					int nextCalls = call + relativeCalls + 1; // + 1 for the rand.nextInt between random ticks
 
@@ -521,25 +527,32 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 					Node nextNode = graph.get(nextCalls);
 					for (int path = 0; path < node.prevNodes.size(); path++) {
 						int chunksLeft = chunkCount - node.pathLengths.get(path);
-						if (callsLeft > chunksLeft * (RANDOM_TICK_SPEED * maxCallsPerRandomTick() + 1))
+						if (callsLeft - 1 > chunksLeft * (
+								subchunksPerChunk * RANDOM_TICK_SPEED * maxCallsPerRandomTick()
+								+ (hasThunder() ? 2 : 1)))
 							continue;
-						if (callsLeft < chunksLeft)
+						if (callsLeft + 1 < chunksLeft)
 							continue;
 
 						int nextPathLength = node.pathLengths.get(path) + 1;
 						int nextSubchunkCount = node.subchunkCounts.get(path) + subchunks;
 						int indexToAdd = Collections.binarySearch(nextNode.pathLengths, nextPathLength);
-						if (nextNode.pathLengths.get(indexToAdd) == nextPathLength) {
+						if (indexToAdd >= 0) {
 							// there is a path of the same length already leading to that node
 							if (nextNode.subchunkCounts.get(indexToAdd) > nextSubchunkCount) {
 								nextNode.prevNodes.set(indexToAdd, call);
 								nextNode.subchunkCounts.set(indexToAdd, nextSubchunkCount);
 							}
 						} else {
+							indexToAdd = -(indexToAdd + 1);
 							nextNode.prevNodes.add(indexToAdd, call);
 							nextNode.pathLengths.add(indexToAdd, nextPathLength);
 							nextNode.subchunkCounts.add(indexToAdd, nextSubchunkCount);
 						}
+					}
+
+					for (int i = 0; i < RANDOM_TICK_SPEED; i++) {
+						randomTick(rand);
 					}
 				}
 				rand.restoreState();
@@ -548,16 +561,17 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 
 			try {
 				Node node = graph.get(targetCalls);
-				int pathLength = targetCalls;
+				int pathLength = chunkCount;
 				int path = Collections.binarySearch(node.pathLengths, pathLength);
-				if (node.pathLengths.get(path) != pathLength)
+				if (path < 0)
 					return false;
+				int subchunks = node.subchunkCounts.get(path);
 
 				while (pathLength != 0) {
 					node = graph.get(node.prevNodes.get(path));
 					pathLength--;
 					path = Collections.binarySearch(node.pathLengths, pathLength);
-					subchunkCounts[pathLength] = node.subchunkCounts.get(path);
+					subchunkCounts[pathLength] = subchunks - (subchunks = node.subchunkCounts.get(path));
 				}
 			} finally {
 				graph.close();

@@ -236,7 +236,6 @@ public class PagedList<E> extends AbstractList<E> implements Closeable {
 				}
 			}));
 		}
-		System.out.println(pagedListDir);
 		return pagedListDir;
 	}
 
