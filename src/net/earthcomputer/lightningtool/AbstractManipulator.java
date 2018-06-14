@@ -121,15 +121,15 @@ public abstract class AbstractManipulator {
 				});
 			}
 
-			long currentTime = System.nanoTime();
-			if (currentTime - lastProgressBarUpdateTime > 100_000_000) {
-				lastProgressBarUpdateTime = currentTime;
-				SwingUtilities.invokeLater(() -> frame.getProgressBar().setString(count + " regions searched"));
-			}
-
 			if (result.isIdeal())
 				stop();
 		});
+
+		long currentTime = System.nanoTime();
+		if (currentTime - lastProgressBarUpdateTime > 100_000_000) {
+			lastProgressBarUpdateTime = currentTime;
+			SwingUtilities.invokeLater(() -> frame.getProgressBar().setString(count + " regions searched"));
+		}
 	}
 
 	public static void resetSeed(Random rand, int x, int z, long worldSeed) {
