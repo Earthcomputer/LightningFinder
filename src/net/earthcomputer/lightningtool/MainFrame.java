@@ -3,6 +3,7 @@ package net.earthcomputer.lightningtool;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -10,6 +11,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -18,8 +23,10 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
@@ -29,7 +36,6 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
@@ -39,6 +45,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.DefaultCaret;
@@ -945,18 +953,41 @@ public class MainFrame extends JFrame {
 		aboutTab = new JScrollPane();
 		mainTabbedPane.addTab("About", null, aboutTab, null);
 
-		JTextArea txtrAbout = new JTextArea();
-		txtrAbout.setFocusable(false);
-		txtrAbout.setWrapStyleWord(true);
-		txtrAbout.setLineWrap(true);
-		txtrAbout.setText(
-				"Lightning machine tool by Earthcomputer\r\n(original tool by Xcom)\r\n\r\nLightning concept inspired by Amiga IZI\r\nLightning research by Earthcomputer, Xcom, 2No2Name, EDDxample, 0x53ee71ebe11e\r\n\r\nWeather research by Earthcomputer, 0x53ee71ebe11e, EDDxample, and independently by Xcom, 2No2Name\r\n\r\nMob spawning research by Xcom, 2No2Name, Earthcomputer\r\n\r\nFirst RNG manipulation iron farm by EDDxample\r\n\r\nLightning farm design by EDDxample, 0x53ee71ebe11e\r\nThanks to SciCraft for giving helpful pointers for various components");
-		txtrAbout.setFont(UIManager.getFont("Label.font"));
-		txtrAbout.setForeground(UIManager.getColor("Label.foreground"));
-		txtrAbout.setBackground(UIManager.getColor("Label.background"));
-		txtrAbout.setEditable(false);
-		txtrAbout.setCaretPosition(0);
-		aboutTab.setViewportView(txtrAbout);
+		JEditorPane aboutPane = new JEditorPane();
+		StringBuilder about = new StringBuilder();
+		String aboutTxt;
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(MainFrame.class.getResourceAsStream("/about.html")))) {
+			reader.lines().forEach(line -> about.append(line).append("\n"));
+			aboutTxt = about.toString();
+		} catch (Exception e) {
+			aboutTxt = "Exception reading about.html";
+			e.printStackTrace();
+		}
+		aboutPane.setContentType("text/html");
+		aboutPane.setEditorKit(JEditorPane.createEditorKitForContentType("text/html"));
+		aboutPane.addHyperlinkListener(new HyperlinkListener() {
+			@Override
+			public void hyperlinkUpdate(HyperlinkEvent e) {
+				if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+					if (Desktop.isDesktopSupported()) {
+						try {
+							Desktop.getDesktop().browse(e.getURL().toURI());
+						} catch (IOException | URISyntaxException e1) {
+							e1.printStackTrace();
+							JOptionPane.showMessageDialog(null, "Unable to open link", "Error", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			}
+		});
+		aboutPane.setText(aboutTxt);
+		aboutPane.setFont(UIManager.getFont("Label.font"));
+		aboutPane.setForeground(UIManager.getColor("Label.foreground"));
+		aboutPane.setBackground(UIManager.getColor("Label.background"));
+		aboutPane.setEditable(false);
+		aboutPane.setEnabled(true);
+		aboutPane.setCaretPosition(0);
+		aboutTab.setViewportView(aboutPane);
 
 		JScrollPane scrollPane = new JScrollPane();
 		outputTab.add(scrollPane);
