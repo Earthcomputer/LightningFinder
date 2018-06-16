@@ -336,12 +336,12 @@ public class MainFrame extends JFrame {
 		thunderOptionsPanel.add(thunderTimeTextField);
 		thunderTimeTextField.setColumns(10);
 
-		rdbtnThunderTurningOn = new JRadioButton("Turning on");
+		rdbtnThunderTurningOn = new JRadioButton("on-time");
 		buttonGroup_1.add(rdbtnThunderTurningOn);
-		rdbtnThunderTurningOn.setSelected(true);
 		thunderOptionsPanel.add(rdbtnThunderTurningOn);
 
-		JRadioButton rdbtnTurningOff = new JRadioButton("Turning off");
+		JRadioButton rdbtnTurningOff = new JRadioButton("off-time");
+		rdbtnTurningOff.setSelected(true);
 		buttonGroup_1.add(rdbtnTurningOff);
 		thunderOptionsPanel.add(rdbtnTurningOff);
 
@@ -370,12 +370,12 @@ public class MainFrame extends JFrame {
 		rainOptionsPanel.add(rainTimeTextField);
 		rainTimeTextField.setColumns(10);
 
-		rdbtnRainTurningOn = new JRadioButton("Turning on");
+		rdbtnRainTurningOn = new JRadioButton("on-time");
 		buttonGroup_2.add(rdbtnRainTurningOn);
-		rdbtnRainTurningOn.setSelected(true);
 		rainOptionsPanel.add(rdbtnRainTurningOn);
 
-		JRadioButton rdbtnTurningOff_1 = new JRadioButton("Turning off");
+		JRadioButton rdbtnTurningOff_1 = new JRadioButton("off-time");
+		rdbtnTurningOff_1.setSelected(true);
 		buttonGroup_2.add(rdbtnTurningOff_1);
 		rainOptionsPanel.add(rdbtnTurningOff_1);
 
