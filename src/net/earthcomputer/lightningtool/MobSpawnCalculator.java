@@ -1,14 +1,11 @@
 package net.earthcomputer.lightningtool;
 
 import java.awt.Color;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
@@ -114,23 +111,16 @@ public class MobSpawnCalculator {
 		}
 
 		// Reset the seed
-		Random rand = new Random();
+		ResettableRandom rand = new ResettableRandom();
 		AbstractManipulator.resetSeed(rand, regionX, regionZ, worldSeed);
 
 		// Simulate the spawning algorithm
-		long beforePassiveSeed = 0;
 		for (int mobType = 0; mobType < MOB_TYPE_COUNT; mobType++) {
 			// Reset the seed after passive because passive only happens occasionally
 			if (mobType == MOB_TYPE_PASSIVE) {
-				try {
-					Field field = Random.class.getDeclaredField("seed");
-					field.setAccessible(true);
-					beforePassiveSeed = ((AtomicLong) field.get(rand)).get();
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
+				rand.saveState();
 			} else if (mobType == MOB_TYPE_PASSIVE + 1) {
-				rand.setSeed(beforePassiveSeed ^ 0x5deece66dL);
+				rand.restoreState();
 			}
 
 			Iterator<ChunkPos> eligibleChunksItr = eligibleChunks.iterator();
@@ -154,6 +144,8 @@ public class MobSpawnCalculator {
 				}
 				int yPos = rand.nextInt(yHeight + 1);
 				int zPos = chunk.getZ() * 16 + rand.nextInt(16);
+
+				rand.saveState();
 
 				xPos += rand.nextInt(6) - rand.nextInt(6);
 				yPos += rand.nextInt(1) - rand.nextInt(1);
@@ -191,6 +183,7 @@ public class MobSpawnCalculator {
 				} else {
 					rand.nextInt(); // A weighted list of 1 element
 				}
+				rand.restoreState();
 
 				// Write position to table
 				if (willSpawnMob) {
