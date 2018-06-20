@@ -41,6 +41,8 @@ public class MobSpawnCalculator {
 				setErrorMessage(frame, "Invalid \"from\" coordinates");
 			return;
 		}
+		regionX += 128;
+		regionZ += 128;
 		if (regionX < 0)
 			regionX -= 80 * 16 - 1;
 		if (regionZ < 0)
