@@ -84,7 +84,19 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 	/**
 	 * Utilizes the random velocity of items from a dispenser
 	 */
-	public static final SimpleRNGAdvancer DISPENSER = new ViewDistanceRNGAdvancer("Dispenser") {
+	public static final SimpleRNGAdvancer DISPENSER = new SimpleRNGAdvancer("Dispenser") {
+		@Override
+		public void advance(ResettableRandom rand) {
+			rand.nextLong();
+			rand.nextGaussian();
+			rand.nextGaussian();
+			rand.nextGaussian();
+		}
+	};
+	/**
+	 * Utilizes the random velocity of items from a dispenser, with a view distance option
+	 */
+	public static final SimpleRNGAdvancer DISPENSER_VIEW_DISTANCE = new ViewDistanceRNGAdvancer("Dispenser") {
 		@Override
 		public void advance(ResettableRandom rand) {
 			rand.nextLong();

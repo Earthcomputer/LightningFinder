@@ -115,6 +115,10 @@ public class MainFrame extends JFrame {
 	private JPanel fortuneTab;
 	private JPanel outputTab;
 	private JScrollPane aboutTab;
+	private JTextField wirelessBitsTextField;
+	private JTextField receiverCountTextField;
+	private JComboBox dispenserDirectionComboBox;
+	private JPanel wirelessTab;
 
 	/**
 	 * Launch the application.
@@ -271,6 +275,8 @@ public class MainFrame extends JFrame {
 					loadAdvancers(IronManipulator.ADVANCERS);
 				} else if (selected == fortuneTab) {
 					loadAdvancers(FortuneManipulator.ADVANCERS);
+				} else if (selected == wirelessTab) {
+					loadAdvancers(WirelessTool.ADVANCERS);
 				} else {
 					loadAdvancers();
 				}
@@ -946,6 +952,64 @@ public class MainFrame extends JFrame {
 		});
 		panel_19.add(btnCalculate_1);
 
+		wirelessTab = new JPanel();
+		mainTabbedPane.addTab("Wireless", null, wirelessTab, null);
+		wirelessTab.setLayout(new BoxLayout(wirelessTab, BoxLayout.Y_AXIS));
+
+		JPanel panel_6 = new JPanel();
+		FlowLayout flowLayout = (FlowLayout) panel_6.getLayout();
+		flowLayout.setAlignment(FlowLayout.LEFT);
+		wirelessTab.add(panel_6);
+
+		JLabel lblBits = new JLabel("Bits:");
+		panel_6.add(lblBits);
+
+		wirelessBitsTextField = new JTextField();
+		wirelessBitsTextField.setText("32");
+		panel_6.add(wirelessBitsTextField);
+		wirelessBitsTextField.setColumns(10);
+
+		JPanel panel_27 = new JPanel();
+		FlowLayout flowLayout_17 = (FlowLayout) panel_27.getLayout();
+		flowLayout_17.setAlignment(FlowLayout.LEFT);
+		wirelessTab.add(panel_27);
+
+		JLabel lblNumberOfReceivers = new JLabel("Number of receivers:");
+		panel_27.add(lblNumberOfReceivers);
+
+		receiverCountTextField = new JTextField();
+		receiverCountTextField.setText("1");
+		panel_27.add(receiverCountTextField);
+		receiverCountTextField.setColumns(10);
+
+		JPanel panel_28 = new JPanel();
+		FlowLayout flowLayout_18 = (FlowLayout) panel_28.getLayout();
+		flowLayout_18.setAlignment(FlowLayout.LEFT);
+		wirelessTab.add(panel_28);
+
+		JLabel lblDispenserDirection = new JLabel("Dispenser direction:");
+		panel_28.add(lblDispenserDirection);
+
+		dispenserDirectionComboBox = new JComboBox();
+		dispenserDirectionComboBox.setModel(new DefaultComboBoxModel(EnumFacing.horizontal()));
+		panel_28.add(dispenserDirectionComboBox);
+
+		JPanel panel_7 = new JPanel();
+		FlowLayout flowLayout_1 = (FlowLayout) panel_7.getLayout();
+		flowLayout_1.setAlignment(FlowLayout.LEFT);
+		wirelessTab.add(panel_7);
+
+		JButton btnCalculate_3 = new JButton("Calculate");
+		btnCalculate_3.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (manipulator != null)
+					manipulator.stop();
+				manipulator = null;
+				WirelessTool.recalculate(MainFrame.this);
+			}
+		});
+		panel_7.add(btnCalculate_3);
+
 		outputTab = new JPanel();
 		mainTabbedPane.addTab("Output", null, outputTab, null);
 		outputTab.setLayout(new BoxLayout(outputTab, BoxLayout.X_AXIS));
@@ -956,7 +1020,8 @@ public class MainFrame extends JFrame {
 		JEditorPane aboutPane = new JEditorPane();
 		StringBuilder about = new StringBuilder();
 		String aboutTxt;
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(MainFrame.class.getResourceAsStream("/about.html")))) {
+		try (BufferedReader reader = new BufferedReader(
+				new InputStreamReader(MainFrame.class.getResourceAsStream("/about.html")))) {
 			reader.lines().forEach(line -> about.append(line).append("\n"));
 			aboutTxt = about.toString();
 		} catch (Exception e) {
@@ -974,7 +1039,8 @@ public class MainFrame extends JFrame {
 							Desktop.getDesktop().browse(e.getURL().toURI());
 						} catch (IOException | URISyntaxException e1) {
 							e1.printStackTrace();
-							JOptionPane.showMessageDialog(null, "Unable to open link", "Error", JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(null, "Unable to open link", "Error",
+									JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				}
@@ -1197,4 +1263,15 @@ public class MainFrame extends JFrame {
 		return rngAdvancerParameterHandler;
 	}
 
+	public JTextField getWirelessBitsTextField() {
+		return wirelessBitsTextField;
+	}
+
+	public JTextField getReceiverCountTextField() {
+		return receiverCountTextField;
+	}
+
+	public JComboBox getDispenserDirectionComboBox() {
+		return dispenserDirectionComboBox;
+	}
 }

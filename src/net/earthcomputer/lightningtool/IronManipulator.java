@@ -10,7 +10,7 @@ public class IronManipulator extends AbstractManipulator {
 
 	private int playerChunks;
 
-	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.DISPENSER, RNGAdvancer.LAVA };
+	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.DISPENSER_VIEW_DISTANCE, RNGAdvancer.LAVA };
 
 	public static final Property<BlockPos> GOLEM_POS = Property.create("golem pos", new BlockPos(0, 0, 0),
 			new BlockPos(0, 0, 0), Property.indifferent());
