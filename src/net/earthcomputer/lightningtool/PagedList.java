@@ -80,7 +80,7 @@ public class PagedList<E> extends AbstractList<E> implements Closeable {
 	@Override
 	public void add(int index, E value) {
 		if (index < 0)
-			throw new IndexOutOfBoundsException(index);
+			throw new IndexOutOfBoundsException("index " + index);
 		if (index > size)
 			throw new IndexOutOfBoundsException("index " + index + ", size " + size);
 		if (index != size)
@@ -98,7 +98,7 @@ public class PagedList<E> extends AbstractList<E> implements Closeable {
 	@Override
 	public E set(int index, E value) {
 		if (index < 0)
-			throw new IndexOutOfBoundsException(index);
+			throw new IndexOutOfBoundsException("index " + index);
 		if (index >= size)
 			throw new IndexOutOfBoundsException("index " + index + ", size " + size);
 
@@ -108,7 +108,7 @@ public class PagedList<E> extends AbstractList<E> implements Closeable {
 	@Override
 	public E get(int index) {
 		if (index < 0)
-			throw new IndexOutOfBoundsException(index);
+			throw new IndexOutOfBoundsException("index " + index);
 		if (index >= size)
 			throw new IndexOutOfBoundsException("index " + index + ", size " + size);
 
@@ -118,7 +118,7 @@ public class PagedList<E> extends AbstractList<E> implements Closeable {
 	@Override
 	public E remove(int index) {
 		if (index < 0)
-			throw new IndexOutOfBoundsException(index);
+			throw new IndexOutOfBoundsException("index " + index);
 		if (index >= size)
 			throw new IndexOutOfBoundsException("index " + index + ", size " + size);
 		if (index != size - 1)
