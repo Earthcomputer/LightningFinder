@@ -37,6 +37,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -59,6 +60,8 @@ import net.earthcomputer.lightningtool.MobList.BiomeType;
 @SuppressWarnings("all")
 public class MainFrame extends JFrame {
 
+	public static MainFrame mainWindow;
+	
 	private AbstractManipulator manipulator;
 	private boolean initializing = true;
 
@@ -128,11 +131,21 @@ public class MainFrame extends JFrame {
 			public void run() {
 				try {
 					MainFrame frame = new MainFrame();
+					mainWindow = frame;
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
+		});
+	}
+	
+	/**
+	 * Write to output
+	 */
+	public static void sendOutput(String s) {
+		SwingUtilities.invokeLater(() -> {
+			mainWindow.getOutputTextArea().append(s+"\n");
 		});
 	}
 

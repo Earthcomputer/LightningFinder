@@ -12,7 +12,7 @@ public class LightningManipulator extends AbstractManipulator {
 	private DoublePredicate trapValuePredicate;
 	private int chunkCount;
 
-	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.DISPENSER_VIEW_DISTANCE, RNGAdvancer.LAVA_LIGHTNING };
+	public static final RNGAdvancer<?>[] ADVANCERS = { RNGAdvancer.LAVA_LIGHTNING, RNGAdvancer.DISPENSER_VIEW_DISTANCE};
 
 	public static final Property<Integer> CHUNK_INDEX = Property.create("chunk index", 0, Integer.MAX_VALUE,
 			Property.minimize());

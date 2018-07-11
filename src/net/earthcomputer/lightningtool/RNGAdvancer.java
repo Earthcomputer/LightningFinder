@@ -267,13 +267,13 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 					horPanel.add(Box.createHorizontalStrut(5));
 
 					horPanel.add(new JLabel("X:"));
-					xInChunkTextField = new JTextField("8");
+					xInChunkTextField = new JTextField("8.5");
 					xInChunkTextField.setColumns(10);
 					horPanel.add(xInChunkTextField);
 					horPanel.add(Box.createHorizontalStrut(10));
 
 					horPanel.add(new JLabel("Z:"));
-					zInChunkTextField = new JTextField("8");
+					zInChunkTextField = new JTextField("8.5");
 					zInChunkTextField.setColumns(10);
 					horPanel.add(zInChunkTextField);
 					horPanel.add(Box.createHorizontalStrut(20));
@@ -626,13 +626,13 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 					horPanel.add(Box.createHorizontalStrut(5));
 
 					horPanel.add(new JLabel("X:"));
-					playerXTextField = new JTextField("8");
+					playerXTextField = new JTextField("8.5");
 					playerXTextField.setColumns(10);
 					horPanel.add(playerXTextField);
 					horPanel.add(Box.createHorizontalStrut(10));
 
 					horPanel.add(new JLabel("Z:"));
-					playerZTextField = new JTextField("8");
+					playerZTextField = new JTextField("8.5");
 					playerZTextField.setColumns(10);
 					horPanel.add(playerZTextField);
 					horPanel.add(Box.createHorizontalStrut(20));
@@ -727,14 +727,84 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 			return new LightningRandomTickParameterHandler();
 		}
 
+		class ChunkCoords{
+			int x;
+			int z;
+			ChunkCoords(int x, int z){
+				this.x = x;
+				this.z = z;
+			}
+			public boolean equals(Object obj) {
+				if(obj instanceof ChunkCoords) {
+					ChunkCoords o = (ChunkCoords) obj;
+					return o.x == this.x && o.z == this.z;
+				}
+				return false;
+			}
+		}
+		
+		List<ChunkCoords> tickedChunks = new ArrayList<ChunkCoords>();
+
+		
 		@Override
 		protected int getChunkCountOverride(int chunkCount, RandomTickParameterHandler parameters) {
-			return Math.min(((LightningRandomTickParameterHandler) parameters).getChunkIndex(), chunkCount);
+			LightningRandomTickParameterHandler param = (LightningRandomTickParameterHandler) parameters;
+			
+			if(param.wasUpdated()) {
+				int viewDistance = param.getViewDistance();
+				double playerX = param.getPlayerXInChunk();
+				double playerZ = param.getPlayerZInChunk();
+				int chunkRelX = param.getChunkRelX();
+				int chunkRelZ = param.getChunkRelZ();
+				tickedChunks = new ArrayList<ChunkCoords>();
+				double playerMargin = Double.MAX_VALUE;
+				
+				boolean lightningStruck = false;
+				
+				for (int x = -viewDistance; x <= viewDistance; x++) {
+					for (int z = -viewDistance; z <= viewDistance; z++) {
+						double dx = (x * 16 + 8) - playerX;
+						double dz = (z * 16 + 8) - playerZ;
+						if (dx * dx + dz * dz < 128 * 128)
+						{
+							if(!lightningStruck) {
+								ChunkCoords c = new ChunkCoords(x,z);
+								if(c.x == chunkRelX && c.z == chunkRelZ) {
+									lightningStruck=true;
+								}
+								tickedChunks.add(c);
+								chunkCount++;
+							}
+						}
+						double distance = dx * dx + dz * dz;
+						distance = Math.sqrt(Math.abs(distance));
+						playerMargin = Double.min(playerMargin, Math.abs(distance-128));
+					}
+				}
+				MainFrame.sendOutput("Chunk index: " + tickedChunks.size());
+				MainFrame.sendOutput("Player position error margin: " + playerMargin);
+				for(int z = -viewDistance; z<=viewDistance; ++z) {
+					String s = "";
+					for(int x = -viewDistance; x<= viewDistance; ++x) {
+						ChunkCoords c = new ChunkCoords(x,z);
+						if(x==chunkRelX && z==chunkRelZ || x==0 && z==0) {
+							s+="\u25a3";
+						}else {
+							s+= tickedChunks.contains(c)? "\u25a0" : "\u25a1";
+						}
+					}
+					MainFrame.sendOutput(s);
+				}
+			}
+			return tickedChunks.size();
 		}
 
 		public static class LightningRandomTickParameterHandler extends RandomTickParameterHandler {
-			private JTextField chunkIndexTextField;
-			private int chunkIndex;
+			private JTextField chunkRelXTextField;
+			private JTextField chunkRelZTextField;
+			private int chunkRelX;
+			private int chunkRelZ;
+			boolean updated;
 
 			@Override
 			public JPanel createPanel() {
@@ -743,10 +813,13 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 				{
 					JPanel horPanel = new JPanel();
 					((FlowLayout) horPanel.getLayout()).setAlignment(FlowLayout.LEFT);
-					horPanel.add(new JLabel("Chunk index:"));
-					chunkIndexTextField = new JTextField();
-					chunkIndexTextField.setColumns(10);
-					horPanel.add(chunkIndexTextField);
+					horPanel.add(new JLabel("Relative chunk coordinates:"));
+					chunkRelXTextField = new JTextField("0");
+					chunkRelZTextField = new JTextField("0");
+					chunkRelXTextField.setColumns(10);
+					chunkRelZTextField.setColumns(10);
+					horPanel.add(chunkRelXTextField);
+					horPanel.add(chunkRelZTextField);
 					panel.add(horPanel);
 				}
 
@@ -757,11 +830,12 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 			public boolean readFromPanel() {
 				if (!super.readFromPanel())
 					return false;
+				
+				updated = true;
 
 				try {
-					chunkIndex = Integer.parseInt(chunkIndexTextField.getText());
-					if (chunkIndex < 0)
-						throw new NumberFormatException();
+					chunkRelX = Integer.parseInt(chunkRelXTextField.getText());
+					chunkRelZ = Integer.parseInt(chunkRelZTextField.getText());
 				} catch (NumberFormatException e) {
 					return false;
 				}
@@ -769,8 +843,16 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 				return true;
 			}
 
-			public int getChunkIndex() {
-				return chunkIndex;
+			public int getChunkRelX() {
+				return chunkRelX;
+			}
+			public int getChunkRelZ() {
+				return chunkRelZ;
+			}
+			public boolean wasUpdated() {
+				boolean u = updated;
+				updated = false;
+				return u;
 			}
 		}
 	}
