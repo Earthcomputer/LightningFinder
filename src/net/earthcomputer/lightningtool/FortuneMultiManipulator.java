@@ -116,7 +116,7 @@ public class FortuneMultiManipulator extends AbstractManipulator {
             int result = 2 + rand.nextInt(3);
 
             if (fortune > 0) {
-                result =+ rand.nextInt(fortune + 1);
+                result += rand.nextInt(fortune + 1);
             }
             return result;
         }
