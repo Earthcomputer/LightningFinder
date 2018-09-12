@@ -95,7 +95,7 @@ public class FortuneManipulator extends AbstractManipulator {
 	}
 
 	public static enum Ore {
-		COAL(0, 2), DIAMOND(3, 7), REDSTONE(1, 5), LAPIS(2, 5), EMERALD(3, 7), QUARTZ(2, 5);
+		COAL(0, 2), DIAMOND(3, 7), REDSTONE(1, 5), LAPIS(2, 5), EMERALD(3, 7), QUARTZ(2, 5), SAPLING(0, 0), POTATO(0, 0), NETHERWART(0, 0);
 
 		private int minXp;
 		private int maxXp;
@@ -106,10 +106,25 @@ public class FortuneManipulator extends AbstractManipulator {
 		}
 
 		public int quantityDropped(int fortune, Random rand) {
+		    int fortuneBonus = 0;
+		    if(this == SAPLING){ // saplings
+		        return rand.nextInt(20) == 0 ? 1 : 0;
+		    }
+		    if(this == POTATO){ // potato
+		        return rand.nextInt(50) == 0 ? 1 : 0;
+		    }
+		    if(this == NETHERWART){ // netherwart
+		        fortuneBonus =+ 2 + rand.nextInt(3);
+		        
+                if (fortune > 0)
+                {
+                    fortuneBonus =+ rand.nextInt(fortune + 1);
+                }
+                return fortuneBonus;
+            }
 			if (this == REDSTONE) {
 				return 4 + rand.nextInt(2) + rand.nextInt(fortune + 1);
 			}
-			int fortuneBonus;
 			if (fortune == 0) {
 				fortuneBonus = 0;
 			} else {
