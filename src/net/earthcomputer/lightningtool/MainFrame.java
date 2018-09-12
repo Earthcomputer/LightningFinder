@@ -56,6 +56,9 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import net.earthcomputer.lightningtool.FortuneManipulator.Ore;
 import net.earthcomputer.lightningtool.MobList.BiomeType;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.LayoutStyle.ComponentPlacement;
 
 @SuppressWarnings("all")
 public class MainFrame extends JFrame {
@@ -117,11 +120,18 @@ public class MainFrame extends JFrame {
 	private JPanel ironTab;
 	private JPanel fortuneTab;
 	private JPanel outputTab;
+    JPanel multiFortuneTab;
 	private JScrollPane aboutTab;
 	private JTextField wirelessBitsTextField;
 	private JTextField receiverCountTextField;
 	private JComboBox dispenserDirectionComboBox;
 	private JPanel wirelessTab;
+	private JCheckBox multiFortune1Diamond;
+	private JCheckBox multiFortune2Redstone;
+	private JCheckBox multiFortune3Lapiz;
+	private JCheckBox multiFortune4Sapling;
+	private JCheckBox multiFortune5Netherwart;
+	private JCheckBox multiFortune6Potato;
 
 	/**
 	 * Launch the application.
@@ -288,6 +298,10 @@ public class MainFrame extends JFrame {
 					loadAdvancers(IronManipulator.ADVANCERS);
 				} else if (selected == fortuneTab) {
 					loadAdvancers(FortuneManipulator.ADVANCERS);
+                } else if (selected == multiFortuneTab) {
+                    loadAdvancers(FortuneMultiManipulator.ADVANCERS);	
+				} else if (selected == wirelessTab) {
+					loadAdvancers(FortuneMultiManipulator.ADVANCERS);
 				} else if (selected == wirelessTab) {
 					loadAdvancers(WirelessTool.ADVANCERS);
 				} else {
@@ -858,112 +872,180 @@ public class MainFrame extends JFrame {
 			}
 		});
 		panel_23.add(btnCalculate_2);
+		
+				fortuneTab = new JPanel();
+				mainTabbedPane.addTab("Fortune", null, fortuneTab, null);
+				fortuneTab.setLayout(new BoxLayout(fortuneTab, BoxLayout.Y_AXIS));
+				
+						JPanel panel = new JPanel();
+						FlowLayout flowLayout_9 = (FlowLayout) panel.getLayout();
+						flowLayout_9.setAlignment(FlowLayout.LEFT);
+						fortuneTab.add(panel);
+						
+								JLabel lblOre = new JLabel("Ore:");
+								panel.add(lblOre);
+								
+										oreComboBox = new JComboBox();
+										oreComboBox.setModel(new DefaultComboBoxModel(Ore.values()));
+										panel.add(oreComboBox);
+										
+												JPanel panel_9 = new JPanel();
+												FlowLayout flowLayout_10 = (FlowLayout) panel_9.getLayout();
+												flowLayout_10.setAlignment(FlowLayout.LEFT);
+												fortuneTab.add(panel_9);
+												
+														JLabel lblAmount = new JLabel("Amount:");
+														panel_9.add(lblAmount);
+														
+																dropAmountTextField = new JTextField();
+																panel_9.add(dropAmountTextField);
+																dropAmountTextField.setColumns(10);
+																
+																		chckbxDropAmountExact = new JCheckBox("Exact");
+																		panel_9.add(chckbxDropAmountExact);
+																		
+																				JPanel panel_11 = new JPanel();
+																				FlowLayout flowLayout_12 = (FlowLayout) panel_11.getLayout();
+																				flowLayout_12.setAlignment(FlowLayout.LEFT);
+																				fortuneTab.add(panel_11);
+																				
+																						JPanel panel_10 = new JPanel();
+																						panel_11.add(panel_10);
+																						panel_10.setLayout(new BoxLayout(panel_10, BoxLayout.Y_AXIS));
+																						
+																								JPanel panel_12 = new JPanel();
+																								FlowLayout flowLayout_13 = (FlowLayout) panel_12.getLayout();
+																								flowLayout_13.setAlignment(FlowLayout.LEFT);
+																								panel_10.add(panel_12);
+																								
+																										chckbxManipulateXp = new JCheckBox("Manipulate XP");
+																										chckbxManipulateXp.addItemListener(new ItemListener() {
+																											public void itemStateChanged(ItemEvent e) {
+																												if (e.getStateChange() == ItemEvent.SELECTED) {
+																													setEnabled(xpPanel, true);
+																												} else if (e.getStateChange() == ItemEvent.DESELECTED) {
+																													setEnabled(xpPanel, false);
+																												}
+																											}
+																										});
+																										panel_12.add(chckbxManipulateXp);
+																										
+																												xpPanel = new JPanel();
+																												FlowLayout fl_xpPanel = (FlowLayout) xpPanel.getLayout();
+																												fl_xpPanel.setAlignment(FlowLayout.LEFT);
+																												panel_10.add(xpPanel);
+																												
+																														Component horizontalStrut_2 = Box.createHorizontalStrut(20);
+																														xpPanel.add(horizontalStrut_2);
+																														
+																																JLabel lblXpDropped = new JLabel("XP dropped:");
+																																xpPanel.add(lblXpDropped);
+																																
+																																		xpDroppedTextField = new JTextField();
+																																		xpPanel.add(xpDroppedTextField);
+																																		xpDroppedTextField.setColumns(10);
+																																		
+																																				chckbxXpExact = new JCheckBox("Exact");
+																																				xpPanel.add(chckbxXpExact);
+																																				
+																																						setEnabled(xpPanel, false);
+																																						
+																																								JPanel panel_22 = new JPanel();
+																																								FlowLayout flowLayout_15 = (FlowLayout) panel_22.getLayout();
+																																								flowLayout_15.setAlignment(FlowLayout.LEFT);
+																																								fortuneTab.add(panel_22);
+																																								
+																																										JLabel lblFortuneLevel = new JLabel("Fortune level:");
+																																										panel_22.add(lblFortuneLevel);
+																																										
+																																												fortuneLevelTextField = new JTextField();
+																																												fortuneLevelTextField.setText("3");
+																																												panel_22.add(fortuneLevelTextField);
+																																												fortuneLevelTextField.setColumns(10);
+																																												
+																																														JPanel panel_19 = new JPanel();
+																																														FlowLayout flowLayout_14 = (FlowLayout) panel_19.getLayout();
+																																														flowLayout_14.setAlignment(FlowLayout.LEFT);
+																																														fortuneTab.add(panel_19);
+																																														
+																																																JButton btnCalculate_1 = new JButton("Calculate");
+																																																btnCalculate_1.addActionListener(new ActionListener() {
+																																																	public void actionPerformed(ActionEvent arg0) {
+																																																		if (manipulator != null)
+																																																			manipulator.stop();
+																																																		manipulator = new FortuneManipulator();
+																																																		manipulator.startSearch(MainFrame.this);
+																																																	}
+																																																});
+																																																panel_19.add(btnCalculate_1);
+		
 
-		fortuneTab = new JPanel();
-		mainTabbedPane.addTab("Fortune", null, fortuneTab, null);
-		fortuneTab.setLayout(new BoxLayout(fortuneTab, BoxLayout.Y_AXIS));
-
-		JPanel panel = new JPanel();
-		FlowLayout flowLayout_9 = (FlowLayout) panel.getLayout();
-		flowLayout_9.setAlignment(FlowLayout.LEFT);
-		fortuneTab.add(panel);
-
-		JLabel lblOre = new JLabel("Ore:");
-		panel.add(lblOre);
-
-		oreComboBox = new JComboBox();
-		oreComboBox.setModel(new DefaultComboBoxModel(Ore.values()));
-		panel.add(oreComboBox);
-
-		JPanel panel_9 = new JPanel();
-		FlowLayout flowLayout_10 = (FlowLayout) panel_9.getLayout();
-		flowLayout_10.setAlignment(FlowLayout.LEFT);
-		fortuneTab.add(panel_9);
-
-		JLabel lblAmount = new JLabel("Amount:");
-		panel_9.add(lblAmount);
-
-		dropAmountTextField = new JTextField();
-		panel_9.add(dropAmountTextField);
-		dropAmountTextField.setColumns(10);
-
-		chckbxDropAmountExact = new JCheckBox("Exact");
-		panel_9.add(chckbxDropAmountExact);
-
-		JPanel panel_11 = new JPanel();
-		FlowLayout flowLayout_12 = (FlowLayout) panel_11.getLayout();
-		flowLayout_12.setAlignment(FlowLayout.LEFT);
-		fortuneTab.add(panel_11);
-
-		JPanel panel_10 = new JPanel();
-		panel_11.add(panel_10);
-		panel_10.setLayout(new BoxLayout(panel_10, BoxLayout.Y_AXIS));
-
-		JPanel panel_12 = new JPanel();
-		FlowLayout flowLayout_13 = (FlowLayout) panel_12.getLayout();
-		flowLayout_13.setAlignment(FlowLayout.LEFT);
-		panel_10.add(panel_12);
-
-		chckbxManipulateXp = new JCheckBox("Manipulate XP");
-		chckbxManipulateXp.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
-				if (e.getStateChange() == ItemEvent.SELECTED) {
-					setEnabled(xpPanel, true);
-				} else if (e.getStateChange() == ItemEvent.DESELECTED) {
-					setEnabled(xpPanel, false);
-				}
-			}
+		multiFortuneTab = new JPanel();																																														
+		mainTabbedPane.addTab("Multi Fortune", null, multiFortuneTab, null);
+		mainTabbedPane.setEnabledAt(6, true);
+		
+		multiFortune1Diamond = new JCheckBox("Diamond/Quartz/Coal");
+		
+		multiFortune2Redstone = new JCheckBox("Redstone");
+		
+		multiFortune3Lapiz = new JCheckBox("Lapiz");
+		
+		multiFortune4Sapling = new JCheckBox("Saplings");
+		
+		multiFortune5Netherwart = new JCheckBox("Netherwart");
+		
+		multiFortune6Potato = new JCheckBox("Poison Potato");
+		
+		JLabel lblNewLabel = new JLabel("Overlap mantion region for maximum item drops of all types of items. Assuming fortune 3 tools for all but poison potatos and saplings.");
+		
+		JButton button = new JButton("Calculate");
+		button.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+	              if (manipulator != null)
+	                    manipulator.stop();
+	                manipulator = new FortuneMultiManipulator();
+	                manipulator.startSearch(MainFrame.this);
+		    }
 		});
-		panel_12.add(chckbxManipulateXp);
-
-		xpPanel = new JPanel();
-		FlowLayout fl_xpPanel = (FlowLayout) xpPanel.getLayout();
-		fl_xpPanel.setAlignment(FlowLayout.LEFT);
-		panel_10.add(xpPanel);
-
-		Component horizontalStrut_2 = Box.createHorizontalStrut(20);
-		xpPanel.add(horizontalStrut_2);
-
-		JLabel lblXpDropped = new JLabel("XP dropped:");
-		xpPanel.add(lblXpDropped);
-
-		xpDroppedTextField = new JTextField();
-		xpPanel.add(xpDroppedTextField);
-		xpDroppedTextField.setColumns(10);
-
-		chckbxXpExact = new JCheckBox("Exact");
-		xpPanel.add(chckbxXpExact);
-
-		setEnabled(xpPanel, false);
-
-		JPanel panel_22 = new JPanel();
-		FlowLayout flowLayout_15 = (FlowLayout) panel_22.getLayout();
-		flowLayout_15.setAlignment(FlowLayout.LEFT);
-		fortuneTab.add(panel_22);
-
-		JLabel lblFortuneLevel = new JLabel("Fortune level:");
-		panel_22.add(lblFortuneLevel);
-
-		fortuneLevelTextField = new JTextField();
-		fortuneLevelTextField.setText("3");
-		panel_22.add(fortuneLevelTextField);
-		fortuneLevelTextField.setColumns(10);
-
-		JPanel panel_19 = new JPanel();
-		FlowLayout flowLayout_14 = (FlowLayout) panel_19.getLayout();
-		flowLayout_14.setAlignment(FlowLayout.LEFT);
-		fortuneTab.add(panel_19);
-
-		JButton btnCalculate_1 = new JButton("Calculate");
-		btnCalculate_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				if (manipulator != null)
-					manipulator.stop();
-				manipulator = new FortuneManipulator();
-				manipulator.startSearch(MainFrame.this);
-			}
-		});
-		panel_19.add(btnCalculate_1);
+		GroupLayout gl_Multi_Furtune = new GroupLayout(multiFortuneTab);
+		gl_Multi_Furtune.setHorizontalGroup(
+		    gl_Multi_Furtune.createParallelGroup(Alignment.LEADING)
+		        .addGroup(gl_Multi_Furtune.createSequentialGroup()
+		            .addContainerGap()
+		            .addGroup(gl_Multi_Furtune.createParallelGroup(Alignment.LEADING)
+		                .addComponent(multiFortune1Diamond)
+		                .addComponent(multiFortune2Redstone)
+		                .addComponent(multiFortune3Lapiz)
+		                .addComponent(multiFortune4Sapling)
+		                .addComponent(multiFortune5Netherwart)
+		                .addComponent(lblNewLabel, GroupLayout.PREFERRED_SIZE, 655, GroupLayout.PREFERRED_SIZE)
+		                .addGroup(gl_Multi_Furtune.createParallelGroup(Alignment.TRAILING, false)
+		                    .addComponent(button, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+		                    .addComponent(multiFortune6Potato, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+		            .addContainerGap(34, Short.MAX_VALUE))
+		);
+		gl_Multi_Furtune.setVerticalGroup(
+		    gl_Multi_Furtune.createParallelGroup(Alignment.LEADING)
+		        .addGroup(gl_Multi_Furtune.createSequentialGroup()
+		            .addContainerGap()
+		            .addComponent(lblNewLabel, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)
+		            .addPreferredGap(ComponentPlacement.RELATED)
+		            .addComponent(multiFortune1Diamond)
+		            .addPreferredGap(ComponentPlacement.UNRELATED)
+		            .addComponent(multiFortune2Redstone)
+		            .addPreferredGap(ComponentPlacement.UNRELATED)
+		            .addComponent(multiFortune3Lapiz)
+		            .addPreferredGap(ComponentPlacement.UNRELATED)
+		            .addComponent(multiFortune4Sapling)
+		            .addPreferredGap(ComponentPlacement.UNRELATED)
+		            .addComponent(multiFortune5Netherwart)
+		            .addPreferredGap(ComponentPlacement.UNRELATED)
+		            .addComponent(multiFortune6Potato)
+		            .addPreferredGap(ComponentPlacement.RELATED, 96, Short.MAX_VALUE)
+		            .addComponent(button)
+		            .addContainerGap())
+		);
+		multiFortuneTab.setLayout(gl_Multi_Furtune);
 
 		wirelessTab = new JPanel();
 		mainTabbedPane.addTab("Wireless", null, wirelessTab, null);
@@ -1287,4 +1369,22 @@ public class MainFrame extends JFrame {
 	public JComboBox getDispenserDirectionComboBox() {
 		return dispenserDirectionComboBox;
 	}
+    public JCheckBox getMultiFortune1Ores() {
+        return multiFortune1Diamond;
+    }
+    public JCheckBox getMultiFortune2Redstone() {
+        return multiFortune2Redstone;
+    }
+    public JCheckBox getMultiFortune3Lapiz() {
+        return multiFortune3Lapiz;
+    }
+    public JCheckBox getMultiFortune4Sapling() {
+        return multiFortune4Sapling;
+    }
+    public JCheckBox getMultiFortune5Netherwart() {
+        return multiFortune5Netherwart;
+    }
+    public JCheckBox getMultiFortune6Potato() {
+        return multiFortune6Potato;
+    }
 }
