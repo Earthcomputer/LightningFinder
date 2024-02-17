@@ -2,4 +2,6 @@
 .project
 .gradle/
 .settings/
-bin/
+/bin/
+/build/
+.idea/

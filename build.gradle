@@ -1,14 +1,14 @@
 
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
+plugins {
+	id 'java'
+}
 
 repositories {
-	jcenter()
+	mavenCentral()
 }
 
 dependencies {
-	compile 'org.swinglabs:swingx:1.6.1'
+	implementation 'org.swinglabs:swingx:1.6.1'
 }
 
 sourceSets.main.java.srcDirs = ['src']
@@ -18,6 +18,5 @@ sourceCompatibility = 1.8
 
 jar.manifest.attributes('Main-Class': 'net.earthcomputer.lightningtool.MainFrame')
 jar.from {
-    configurations.compileClasspath.filter{ it.exists() }.collect { it.isDirectory() ? it : zipTree(it) }
     configurations.runtimeClasspath.filter{ it.exists() }.collect { it.isDirectory() ? it : zipTree(it) }
 }
