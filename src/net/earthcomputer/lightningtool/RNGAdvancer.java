@@ -563,6 +563,8 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 						}
 					}
 
+					rand.nextInt();
+
 					for (int i = 0; i < RANDOM_TICK_SPEED; i++) {
 						randomTick(rand);
 					}
