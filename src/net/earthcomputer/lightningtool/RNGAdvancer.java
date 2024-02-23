@@ -526,9 +526,10 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 				int initialCallCount = rand.getCount();
 				if (hasThunder())
 					rand.nextInt(100000);
+				rand.nextInt();
 				for (int subchunks = 0; subchunks < subchunksPerChunk; subchunks++) {
 					int relativeCalls = rand.getCount() - initialCallCount;
-					int nextCalls = call + relativeCalls + 1; // + 1 for the rand.nextInt between random ticks
+					int nextCalls = call + relativeCalls;
 
 					int callsLeft = targetCalls - nextCalls;
 					if (callsLeft < 0)
@@ -562,8 +563,6 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 							nextNode.subchunkCounts.add(indexToAdd, nextSubchunkCount);
 						}
 					}
-
-					rand.nextInt();
 
 					for (int i = 0; i < RANDOM_TICK_SPEED; i++) {
 						randomTick(rand);
