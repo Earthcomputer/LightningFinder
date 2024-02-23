@@ -782,7 +782,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 						playerMargin = Double.min(playerMargin, Math.abs(distance-128));
 					}
 				}
-				MainFrame.sendOutput("Chunk index: " + tickedChunks.size());
+				MainFrame.sendOutput("Chunk index: " + (tickedChunks.size() - 1));
 				MainFrame.sendOutput("Player position error margin: " + playerMargin);
 				for(int z = -viewDistance; z<=viewDistance; ++z) {
 					String s = "";
@@ -797,7 +797,7 @@ public abstract class RNGAdvancer<P extends RNGAdvancer.ParameterHandler> {
 					MainFrame.sendOutput(s);
 				}
 			}
-			return tickedChunks.size();
+			return tickedChunks.isEmpty() ? 0 : tickedChunks.size() - 1;
 		}
 
 		public static class LightningRandomTickParameterHandler extends RandomTickParameterHandler {
